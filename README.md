@@ -34,6 +34,7 @@ cada jogo pode ter varios patrocinios
 exemplo: sporttv, valor, descricao, jogo.
 
 substituições
+simular base de dados (singleton)
 
 #Requisitos
 
