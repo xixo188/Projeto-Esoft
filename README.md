@@ -43,3 +43,7 @@ https://myipleiria-my.sharepoint.com/:w:/r/personal/2191613_my_ipleiria_pt/_layo
 # Modelo Dominio
 <img width="1261" height="778" alt="image" src="https://github.com/user-attachments/assets/54b75b37-2174-4f75-8c2f-67fb1d7f45f6" />
 
+# Diagrama de Caso de Uso
+<img width="340" height="526" alt="image" src="https://github.com/user-attachments/assets/9f1636a7-eed7-4441-8643-a4834041b0cc" />
+
+<img width="297" height="188" alt="image" src="https://github.com/user-attachments/assets/86eb2b69-e7d6-46f4-9956-3375662c98a2" />
