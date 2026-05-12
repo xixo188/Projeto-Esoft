@@ -41,7 +41,8 @@ simular base de dados (singleton)
 https://myipleiria-my.sharepoint.com/:w:/r/personal/2191613_my_ipleiria_pt/_layouts/15/doc2.aspx?sourcedoc=%7B4498CFB5-4F17-460B-92C2-28519FF6CBE4%7D&file=Document.docx&action=editNew&mobileredirect=true&wdOrigin=APPHOME-WEB.OTHER%2CAPPHOME-WEB.UNAUTH%2CAPPHOME-WEB.SHELL.SIGNIN%2CAPPHOME-WEB.BANNER.NEWBLANK&wdPreviousSession=7203efb6-5a12-4406-b16e-3e42a76128b5&wdPreviousSessionSrc=AppHomeWeb&ct=1777390258588
 
 # Modelo Dominio
-<img width="1261" height="778" alt="image" src="https://github.com/user-attachments/assets/54b75b37-2174-4f75-8c2f-67fb1d7f45f6" />
+<img width="1284" height="791" alt="image" src="https://github.com/user-attachments/assets/d5ebd7a8-7b2a-40a1-90ec-c1b63967e978" />
+
 
 # Diagrama de Caso de Uso
 <img width="340" height="526" alt="image" src="https://github.com/user-attachments/assets/9f1636a7-eed7-4441-8643-a4834041b0cc" />
