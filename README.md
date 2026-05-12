@@ -45,9 +45,8 @@ https://myipleiria-my.sharepoint.com/:w:/r/personal/2191613_my_ipleiria_pt/_layo
 
 
 # Diagrama de Caso de Uso
-<img width="340" height="526" alt="image" src="https://github.com/user-attachments/assets/9f1636a7-eed7-4441-8643-a4834041b0cc" />
+<img width="1191" height="529" alt="image" src="https://github.com/user-attachments/assets/047acad0-dfb6-4418-99d4-36b9395c6b73" />
 
-<img width="297" height="188" alt="image" src="https://github.com/user-attachments/assets/86eb2b69-e7d6-46f4-9956-3375662c98a2" />
 
 # Prototipo Figma 
 
