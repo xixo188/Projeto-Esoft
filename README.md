@@ -47,6 +47,10 @@ https://myipleiria-my.sharepoint.com/:w:/r/personal/2191613_my_ipleiria_pt/_layo
 # Diagrama de Caso de Uso
 <img width="1204" height="522" alt="image" src="https://github.com/user-attachments/assets/900952ff-5329-409c-a9f0-1580f5b8f22c" />
 
+# Texto dos Casos de Uso
+
+https://myipleiria-my.sharepoint.com/:w:/r/personal/2025235819_my_ipleiria_pt/_layouts/15/Doc.aspx?sourcedoc=%7BE96C7480-D86F-41CA-AE47-582235A2B158%7D&file=Documento.docx&action=editnew&mobileredirect=true&wdPreviousSession=dfda1a85-47c5-713d-451c-eafd20f170bc&wdNewAndOpenCt=1779203840747&wdo=4&wdOrigin=wacFileNew&wdPreviousCorrelation=f62c73d1-2f89-45c2-84a9-972ab875483c&wdnd=1
+
 
 # Prototipo Figma 
 
