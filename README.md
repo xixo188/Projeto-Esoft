@@ -56,3 +56,7 @@ https://myipleiria-my.sharepoint.com/:w:/r/personal/2025235819_my_ipleiria_pt/_l
 
 https://www.figma.com/design/pMr33xncLhpxVXuBAIaQ74/Projeto-Esoft?node-id=0-1&t=fYPL2Uo4DZ91MYLm-1
 
+# Observações
+
+https://myipleiria-my.sharepoint.com/:w:/g/personal/2025235819_my_ipleiria_pt/IQChjjYaHit7TqM0fXN5lshwAR_WtvKqyb9HphG5H19gwrI?e=u86vY3
+
