@@ -5,6 +5,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.text.NumberFormat;
+import javax.swing.JFormattedTextField;
+import javax.swing.text.MaskFormatter;
 
 public class TorneioApp extends JFrame {
     private final Store store = Store.getInstance();
@@ -47,8 +50,10 @@ public class TorneioApp extends JFrame {
         JButton estadios = btn("Estádios");
         JButton calendario = btn("Calendário");
         JButton bilhetes = btn("Bilhetes");
+        JButton patrocinadores = btn("Patrocínios");
         JButton estatisticas = btn("Estatísticas");
         JButton faturacao = btn("Faturação");
+
 
         home.addActionListener(e -> showHome());
         torneios.addActionListener(e -> showTorneioPage());
@@ -56,6 +61,7 @@ public class TorneioApp extends JFrame {
         estadios.addActionListener(e -> showStadiumsPage());
         calendario.addActionListener(e -> showCalendarPage());
         bilhetes.addActionListener(e -> showTicketsPage());
+        patrocinadores.addActionListener(e -> showSponsorsPage());
         estatisticas.addActionListener(e -> showStatsPage());
         faturacao.addActionListener(e -> showBillingPage());
 
@@ -65,6 +71,7 @@ public class TorneioApp extends JFrame {
         menu.add(estadios);
         menu.add(calendario);
         menu.add(bilhetes);
+        menu.add(patrocinadores);
         menu.add(estatisticas);
         menu.add(faturacao);
         return menu;
@@ -103,27 +110,79 @@ public class TorneioApp extends JFrame {
         return c;
     }
 
+    private JFormattedTextField dateField(String value) {
+        try {
+            MaskFormatter mask = new MaskFormatter("##/##/####");
+            mask.setPlaceholderCharacter('0');
+
+            JFormattedTextField field = new JFormattedTextField(mask);
+            field.setValue(value == null ? "" : value);
+            return field;
+        } catch (java.text.ParseException e) {
+            return new JFormattedTextField();
+        }
+    }
+
     private void showTorneioPage() {
-        Tournament t = store.tournament;
         JPanel p = new JPanel(new BorderLayout(12, 12));
-        JTextArea info = new JTextArea();
-        info.setEditable(false);
-        info.setFont(new Font("Monospaced", Font.PLAIN, 15));
-        info.setText(
-                "Nome: " + t.name + "\n" +
-                "Data de início: " + t.startDate + "\n" +
-                "Data de fim: " + t.endDate + "\n" +
-                "Tempo de descanso: " + t.restDays + " dias\n" +
-                "Estado: " + t.state + "\n" +
-                "Equipas: " + store.teams.size() + "\n" +
-                "Estádios: " + store.stadiums.size() + "\n" +
-                "Jogos: " + store.games.size() + "\n"
+
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton create = btn("Criar Torneio");
+
+        top.add(create);
+
+        DefaultTableModel model = tableModel("ID", "Torneio", "Estado");
+
+        Tournament t = store.tournament;
+        model.addRow(new Object[]{1, t.name, t.state});
+
+        JTable table = new JTable(model);
+
+        create.addActionListener(e -> showTournamentCreateForm());
+
+        table.addMouseListener(doubleClick(() -> showTournamentDetails()));
+
+        p.add(top, BorderLayout.NORTH);
+        p.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        setPage("Lista de Torneios", p);
+    }
+
+    private void showTournamentDetails() {
+        Tournament t = store.tournament;
+
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        DefaultTableModel model = tableModel(
+                "Início",
+                "Fim",
+                "Estado",
+                "Número Equipas"
         );
+
+        model.addRow(new Object[]{
+                t.startDate,
+                t.endDate,
+                t.state,
+                store.teams.size()
+        });
+
+        JTable table = new JTable(model);
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton back = btn("Voltar");
         JButton edit = btn("Editar Torneio");
+
+        buttons.add(back);
+        buttons.add(edit);
+
+        back.addActionListener(e -> showTorneioPage());
         edit.addActionListener(e -> showTournamentForm());
-        p.add(info, BorderLayout.CENTER);
-        p.add(edit, BorderLayout.SOUTH);
-        setPage("Torneio", p);
+
+        p.add(new JScrollPane(table), BorderLayout.CENTER);
+        p.add(buttons, BorderLayout.SOUTH);
+
+        setPage(t.name, p);
     }
 
     private void showTournamentForm() {
@@ -155,8 +214,19 @@ public class TorneioApp extends JFrame {
                 error("Preenche todos os campos obrigatórios.");
                 return;
             }
-            Integer restVal = parseInt(rest.getText(), "O descanso mínimo tem de ser um número inteiro.");
+
+            Integer restVal = parseInt(
+                    rest.getText(),
+                    "O descanso mínimo tem de ser um número inteiro."
+            );
+
             if (restVal == null) return;
+
+            if (restVal < 2) {
+                error("O tempo de descanso entre jogos não pode ser inferior a 2 dias.");
+                return;
+            }
+
             t.name = name.getText().trim();
             t.startDate = start.getText().trim();
             t.endDate = end.getText().trim();
@@ -165,6 +235,62 @@ public class TorneioApp extends JFrame {
             showTorneioPage();
         });
         setPage("Editar Torneio", p);
+    }
+
+    private void showTournamentCreateForm() {
+        JTextField name = new JTextField();
+        JFormattedTextField start = dateField("");
+        JFormattedTextField end = dateField("");
+        JTextField rest = new JTextField("2");
+
+        JPanel form = formPanel();
+        addRow(form, "Nome do Torneio *", name, 0);
+        addRow(form, "Data de início *", start, 1);
+        addRow(form, "Data de fim *", end, 2);
+        addRow(form, "Descanso entre jogos *", rest, 3);
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton cancel = btn("Cancelar");
+        JButton save = btn("Confirmar");
+
+        buttons.add(cancel);
+        buttons.add(save);
+
+        JPanel p = new JPanel(new BorderLayout());
+        p.add(form, BorderLayout.NORTH);
+        p.add(buttons, BorderLayout.SOUTH);
+
+        cancel.addActionListener(e -> showTorneioPage());
+
+        save.addActionListener(e -> {
+            if (blank(name, start, end, rest)) {
+                error("Erro: Campos obrigatórios em falta.");
+                return;
+            }
+
+            Integer restVal = parseInt(
+                    rest.getText(),
+                    "O descanso entre jogos tem de ser um número inteiro."
+            );
+
+            if (restVal == null) return;
+
+            if (restVal < 2) {
+                error("O tempo de descanso entre jogos não pode ser inferior a 2 dias.");
+                return;
+            }
+
+            store.tournament.name = name.getText().trim();
+            store.tournament.startDate = start.getText().trim();
+            store.tournament.endDate = end.getText().trim();
+            store.tournament.restDays = restVal;
+            store.tournament.state = "em preparação";
+
+            info("Torneio criado com sucesso.");
+            showTorneioPage();
+        });
+
+        setPage("Criar Torneio", p);
     }
 
     private void showTeamsPage() {
@@ -649,51 +775,79 @@ public class TorneioApp extends JFrame {
 
     private void showCalendarPage() {
         JPanel p = new JPanel(new BorderLayout(12, 12));
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton generate = btn("Gerar Calendário");
-        JButton view = btn("Ver Jogo");
-        JButton start = btn("Colocar em curso");
-        JButton finish = btn("Concluir jogo");
-        top.add(generate);
-        top.add(view);
-        top.add(start);
-        top.add(finish);
 
-        DefaultTableModel model = tableModel("ID", "Fase", "Jogo", "Data/Hora", "Estádio", "Estado", "Resultado");
-        for (Game g : store.games) {
-            model.addRow(new Object[]{g.id, g.phase, g.teamA + " vs " + g.teamB, g.dateTime, g.stadium == null ? "" : g.stadium.name, g.state, g.resultText()});
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton groupPhase = btn("Fase de Grupos");
+        JButton eliminationPhase = btn("Fase de Eliminação");
+
+        top.add(groupPhase);
+        top.add(eliminationPhase);
+
+        JPanel center = new JPanel(new BorderLayout(12, 12));
+
+        if (store.games.isEmpty()) {
+            center.add(empty("Ainda não há calendário definido."), BorderLayout.CENTER);
+        } else {
+            DefaultTableModel model = tableModel(
+                    "ID", "Fase", "Jogo", "Data/Hora", "Estádio", "Estado", "Resultado"
+            );
+
+            for (Game g : store.games) {
+                model.addRow(new Object[]{
+                        g.id,
+                        g.phase,
+                        g.teamA + " vs " + g.teamB,
+                        g.dateTime,
+                        g.stadium == null ? "" : g.stadium.name,
+                        g.state,
+                        g.resultText()
+                });
+            }
+
+            JTable table = new JTable(model);
+
+            table.addMouseListener(doubleClick(() -> {
+                Game g = selectedGame(table);
+                if (g != null) showGameDetails(g);
+            }));
+
+            center.add(new JScrollPane(table), BorderLayout.CENTER);
         }
-        JTable table = new JTable(model);
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton generate = btn("Gerar Calendário");
+
+        bottom.add(generate);
+
         generate.addActionListener(e -> generateCalendar());
-        view.addActionListener(e -> {
-            Game g = selectedGame(table);
-            if (g != null) showGameDetails(g);
-        });
-        start.addActionListener(e -> {
-            Game g = selectedGame(table);
-            if (g != null) {
-                g.state = GameState.EM_CURSO;
-                showCalendarPage();
-            }
-        });
-        finish.addActionListener(e -> {
-            Game g = selectedGame(table);
-            if (g != null) {
-                g.state = GameState.CONCLUIDO;
-                showCalendarPage();
-            }
-        });
-        table.addMouseListener(doubleClick(() -> {
-            Game g = selectedGame(table);
-            if (g != null) showGameDetails(g);
-        }));
 
         p.add(top, BorderLayout.NORTH);
-        p.add(store.games.isEmpty() ? empty("Ainda não há calendário definido.") : new JScrollPane(table), BorderLayout.CENTER);
+        p.add(center, BorderLayout.CENTER);
+        p.add(bottom, BorderLayout.SOUTH);
+
         setPage("Calendário", p);
     }
 
+    private JTable getTableFromPanel(JPanel panel) {
+        for (Component comp : panel.getComponents()) {
+            if (comp instanceof JScrollPane scrollPane) {
+                JViewport viewport = scrollPane.getViewport();
+                Component view = viewport.getView();
+
+                if (view instanceof JTable table) {
+                    return table;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private void generateCalendar() {
+        if (store.tournament.startDate.compareTo(store.tournament.endDate) > 0) {
+            error("Não é possível gerar um calendário com as datas fornecidas.");
+            return;
+        }
         if (store.stadiums.isEmpty()) {
             error("É necessário criar pelo menos um estádio antes de gerar o calendário.");
             return;
@@ -704,13 +858,32 @@ public class TorneioApp extends JFrame {
         }
         store.games.clear();
         Stadium stadium = store.stadiums.get(0);
-        store.games.add(new Game(store.nextId(), "Fase de Grupos", "Equipa A", "Equipa B", store.tournament.startDate + " 18:00", stadium));
-        store.games.add(new Game(store.nextId(), "Fase de Grupos", "Equipa C", "Equipa D", store.tournament.startDate + " 21:00", stadium));
-        store.games.add(new Game(store.nextId(), "Final", "Por definir", "Por definir", store.tournament.endDate + " 20:00", stadium));
+        store.games.add(new Game(store.nextId(), "Fase de Grupos", "Equipa A", "Equipa B",
+                store.tournament.startDate + " 18:00", stadium));
+
+        store.games.add(new Game(store.nextId(), "Fase de Grupos", "Equipa C", "Equipa D",
+                addDays(store.tournament.startDate, store.tournament.restDays) + " 18:00", stadium));
+
+        store.games.add(new Game(store.nextId(), "Final", "Por definir", "Por definir",
+                store.tournament.endDate + " 20:00", stadium));
         store.calendarGenerated = true;
         store.tournament.state = "em curso";
         info("Calendário gerado com sucesso.");
         showCalendarPage();
+    }
+
+    private String addDays(String date, int days) {
+        try {
+            java.time.format.DateTimeFormatter formatter =
+                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            java.time.LocalDate localDate =
+                    java.time.LocalDate.parse(date, formatter);
+
+            return localDate.plusDays(days).format(formatter);
+        } catch (Exception e) {
+            return date;
+        }
     }
 
     private void showGameDetails(Game g) {
@@ -790,6 +963,45 @@ public class TorneioApp extends JFrame {
         setPage("Editar Dados Jogo", p);
     }
 
+    private void showTicketDetails(TicketBatch tb) {
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        JTextArea infoArea = new JTextArea();
+        infoArea.setEditable(false);
+        infoArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        infoArea.setText(
+                "Jogo: " + tb.game.teamA + " vs " + tb.game.teamB + "\n" +
+                        "Data/Hora: " + tb.game.dateTime + "\n" +
+                        "Estádio: " + tb.game.stadium.name + "\n" +
+                        "Bancada: " + tb.stand.name + "\n" +
+                        "Preço: " + money(tb.price) + "\n" +
+                        "Bilhetes disponíveis: " + tb.available + "\n" +
+                        "Bilhetes vendidos: " + tb.sold + "\n" +
+                        "Estado do jogo: " + tb.game.state + "\n"
+        );
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton back = btn("Voltar");
+        JButton buy = btn("Comprar Bilhete");
+        JButton edit = btn("Editar Bilhete");
+        JButton delete = btn("Eliminar Bilhete");
+
+        buttons.add(back);
+        buttons.add(buy);
+        buttons.add(edit);
+        buttons.add(delete);
+
+        back.addActionListener(e -> showTicketsPage());
+        buy.addActionListener(e -> buyTicket(tb));
+        edit.addActionListener(e -> showTicketForm(tb));
+        delete.addActionListener(e -> deleteTicket(tb));
+
+        p.add(buttons, BorderLayout.NORTH);
+        p.add(new JScrollPane(infoArea), BorderLayout.CENTER);
+
+        setPage("Bilhete", p);
+    }
+
     private void showTicketsPage() {
         JPanel p = new JPanel(new BorderLayout(12, 12));
         JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -806,16 +1018,22 @@ public class TorneioApp extends JFrame {
         create.addActionListener(e -> showTicketForm(null));
         buy.addActionListener(e -> {
             TicketBatch tb = selectedTicket(table);
-            if (tb != null) buyTicket(tb);
+            if (tb != null) showTicketDetails(tb);
         });
+
         edit.addActionListener(e -> {
             TicketBatch tb = selectedTicket(table);
-            if (tb != null) showTicketForm(tb);
+            if (tb != null) showTicketDetails(tb);
         });
+
         delete.addActionListener(e -> {
             TicketBatch tb = selectedTicket(table);
-            if (tb != null) deleteTicket(tb);
+            if (tb != null) showTicketDetails(tb);
         });
+        table.addMouseListener(doubleClick(() -> {
+            TicketBatch tb = selectedTicket(table);
+            if (tb != null) showTicketDetails(tb);
+        }));
         p.add(top, BorderLayout.NORTH);
         p.add(store.tickets.isEmpty() ? empty("Não existem bilhetes criados.") : new JScrollPane(table), BorderLayout.CENTER);
         setPage("Lista de Bilhetes", p);
@@ -826,7 +1044,14 @@ public class TorneioApp extends JFrame {
         JComboBox<Game> gameBox = new JComboBox<>();
         for (Game g : store.games) gameBox.addItem(g);
         JComboBox<Stand> standBox = new JComboBox<>();
-        JTextField price = new JTextField(isEdit ? String.valueOf(editing.price) : "");
+        NumberFormat euroFormat = NumberFormat.getNumberInstance();
+        euroFormat.setMinimumFractionDigits(2);
+        euroFormat.setMaximumFractionDigits(2);
+
+        JFormattedTextField price = new JFormattedTextField(euroFormat);
+        price.setValue(isEdit ? editing.price : 0.00);
+        price.setHorizontalAlignment(JTextField.RIGHT);
+        price.setFocusLostBehavior(JFormattedTextField.COMMIT_OR_REVERT);
         JTextField qty = new JTextField(isEdit ? String.valueOf(editing.available + editing.sold) : "");
         qty.setEnabled(!isEdit);
         if (isEdit) {
@@ -843,7 +1068,11 @@ public class TorneioApp extends JFrame {
         JPanel form = formPanel();
         addRow(form, "Jogo *", gameBox, 0);
         addRow(form, "Bancada *", standBox, 1);
-        addRow(form, "Preço *", price, 2);
+        JPanel pricePanel = new JPanel(new BorderLayout());
+        pricePanel.add(price, BorderLayout.CENTER);
+        pricePanel.add(new JLabel(" €"), BorderLayout.EAST);
+
+        addRow(form, "Preço *", pricePanel, 2);
         addRow(form, "Quantidade *", qty, 3);
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton cancel = btn("Cancelar");
@@ -855,8 +1084,14 @@ public class TorneioApp extends JFrame {
                 error("Erro: campos obrigatórios em falta.");
                 return;
             }
-            Double priceVal = parseDouble(price.getText(), "O preço tem de ser numérico.");
-            if (priceVal == null) return;
+            try {
+                price.commitEdit();
+            } catch (java.text.ParseException ex) {
+                error("O preço tem de ser numérico.");
+                return;
+            }
+
+            Double priceVal = ((Number) price.getValue()).doubleValue();
             if (priceVal < 0) { error("O preço não pode ser negativo."); return; }
             if (isEdit) {
                 if (editing.game.state == GameState.EM_CURSO || editing.game.state == GameState.CONCLUIDO) {
@@ -921,28 +1156,348 @@ public class TorneioApp extends JFrame {
         showTicketsPage();
     }
 
-    private void showStatsPage() {
-        DefaultTableModel model = tableModel("Jogo", "Resultado", "Cartões amarelos", "Cartões vermelhos", "Posse de bola");
-        for (Game g : store.games) {
-            model.addRow(new Object[]{g.teamA + " vs " + g.teamB, g.resultText(), g.yellowA + g.yellowB, g.redA + g.redB, g.possessionA + "% - " + (100 - g.possessionA) + "%"});
+    private void showSponsorsPage() {
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton create = btn("Criar Patrocínio");
+        JButton edit = btn("Editar");
+        JButton delete = btn("Remover Patrocinador");
+
+        top.add(create);
+        top.add(edit);
+        top.add(delete);
+
+        DefaultTableModel model = tableModel("ID", "Nome", "Descrição", "Valor");
+        for (Sponsor s : store.sponsors) {
+            model.addRow(new Object[]{s.id, s.name, s.description, money(s.value)});
         }
+
+        JTable table = new JTable(model);
+
+        create.addActionListener(e -> showSponsorForm(null));
+
+        edit.addActionListener(e -> {
+            Sponsor s = selectedSponsor(table);
+            if (s != null) showSponsorForm(s);
+        });
+
+        delete.addActionListener(e -> {
+            Sponsor s = selectedSponsor(table);
+            if (s != null) deleteSponsor(s);
+        });
+
+        table.addMouseListener(doubleClick(() -> {
+            Sponsor s = selectedSponsor(table);
+            if (s != null) showSponsorDetails(s);
+        }));
+
+        p.add(top, BorderLayout.NORTH);
+        p.add(store.sponsors.isEmpty()
+                ? empty("Não há patrocinadores registados.")
+                : new JScrollPane(table), BorderLayout.CENTER);
+
+        setPage("Patrocínios", p);
+    }
+
+    private void showSponsorDetails(Sponsor sponsor) {
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        JTextArea infoArea = new JTextArea();
+        infoArea.setEditable(false);
+        infoArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        infoArea.setText(
+                "Nome: " + sponsor.name + "\n" +
+                        "Descrição: " + sponsor.description + "\n" +
+                        "Valor: " + money(sponsor.value) + "\n"
+        );
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton back = btn("Voltar");
+        JButton edit = btn("Editar");
+        JButton delete = btn("Remover Patrocinador");
+
+        buttons.add(back);
+        buttons.add(edit);
+        buttons.add(delete);
+
+        back.addActionListener(e -> showSponsorsPage());
+        edit.addActionListener(e -> showSponsorForm(sponsor));
+        delete.addActionListener(e -> deleteSponsor(sponsor));
+
+        p.add(buttons, BorderLayout.NORTH);
+        p.add(new JScrollPane(infoArea), BorderLayout.CENTER);
+
+        setPage("Patrocínios do Torneio", p);
+    }
+
+    private void showSponsorForm(Sponsor editing) {
+        boolean isEdit = editing != null;
+
+        if (isTournamentStarted()) {
+            error(isEdit
+                    ? "Erro: Não é possível editar um patrocínio de um torneio já iniciado."
+                    : "Erro: Os patrocínios devem ser registados antes do início do jogo.");
+            return;
+        }
+
+        JTextField name = new JTextField(isEdit ? editing.name : "");
+        JTextField description = new JTextField(isEdit ? editing.description : "");
+        NumberFormat euroFormat = NumberFormat.getNumberInstance();
+        euroFormat.setMinimumFractionDigits(2);
+        euroFormat.setMaximumFractionDigits(2);
+
+        JFormattedTextField value = new JFormattedTextField(euroFormat);
+        value.setValue(isEdit ? editing.value : 0.00);
+        value.setHorizontalAlignment(JTextField.RIGHT);
+        value.setFocusLostBehavior(JFormattedTextField.COMMIT_OR_REVERT);
+
+        JPanel form = formPanel();
+        addRow(form, "Nome *", name, 0);
+        addRow(form, "Descrição *", description, 1);
+        JPanel valuePanel = new JPanel(new BorderLayout());
+        valuePanel.add(value, BorderLayout.CENTER);
+        valuePanel.add(new JLabel(" €"), BorderLayout.EAST);
+
+        addRow(form, "Valor *", valuePanel, 2);
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton cancel = btn("Cancelar");
+        JButton save = btn("Confirmar");
+
+        buttons.add(cancel);
+        buttons.add(save);
+
+        cancel.addActionListener(e -> showSponsorsPage());
+
+        save.addActionListener(e -> {
+            if (blank(name, description, value)) {
+                error("Erro: Campos obrigatórios em falta.");
+                return;
+            }
+
+            try {
+                value.commitEdit();
+            } catch (java.text.ParseException ex) {
+                error("O valor do patrocínio tem de ser numérico.");
+                return;
+            }
+
+            Double valueVal = ((Number) value.getValue()).doubleValue();
+            if (valueVal == null) return;
+
+            if (valueVal <= 0) {
+                error("O valor do patrocínio deve ser positivo.");
+                return;
+            }
+
+            if (isEdit) {
+                editing.name = name.getText().trim();
+                editing.description = description.getText().trim();
+                editing.value = valueVal;
+                info("Dados salvos com sucesso.");
+            } else {
+                store.sponsors.add(new Sponsor(
+                        store.nextId(),
+                        name.getText().trim(),
+                        description.getText().trim(),
+                        valueVal
+                ));
+                info("Patrocínio criado com sucesso.");
+            }
+
+            showSponsorsPage();
+        });
+
         JPanel p = new JPanel(new BorderLayout());
-        p.add(store.games.isEmpty() ? empty("Ainda não existem dados estatísticos registados para este torneio.") : new JScrollPane(new JTable(model)), BorderLayout.CENTER);
+        p.add(form, BorderLayout.NORTH);
+        p.add(buttons, BorderLayout.SOUTH);
+
+        setPage(isEdit ? "Editar Patrocínios" : "Criar Patrocínios", p);
+    }
+
+    private void addRow(JPanel form, String label, Component comp, int row) {
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(6, 6, 6, 6);
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        c.gridx = 0;
+        c.gridy = row;
+        c.weightx = 0;
+        form.add(new JLabel(label), c);
+
+        c.gridx = 1;
+        c.weightx = 1;
+        form.add(comp, c);
+    }
+
+    private void deleteSponsor(Sponsor sponsor) {
+        if (isTournamentStarted()) {
+            error("Erro: Não é possível eliminar um patrocínio associado a um torneio já iniciado.");
+            return;
+        }
+
+        int opt = JOptionPane.showConfirmDialog(
+                this,
+                "Eliminar o patrocínio " + sponsor.name + "?",
+                "Confirmação",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (opt == JOptionPane.YES_OPTION) {
+            store.sponsors.remove(sponsor);
+            info("Patrocínio eliminado com sucesso.");
+            showSponsorsPage();
+        }
+    }
+
+    private Sponsor selectedSponsor(JTable table) {
+        int id = selectedId(table);
+        return id < 0 ? null : store.findSponsor(id);
+    }
+
+    private boolean isTournamentStarted() {
+        return store.games.stream().anyMatch(g ->
+                g.state == GameState.EM_CURSO || g.state == GameState.CONCLUIDO
+        );
+    }
+
+    private void showStatsPage() {
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        DefaultTableModel model = tableModel(
+                "Nº",
+                "Jogador",
+                "GM",
+                "CA",
+                "CV"
+        );
+
+        int index = 1;
+
+        for (Team team : store.teams) {
+            for (Player player : team.players) {
+                model.addRow(new Object[]{
+                        index++,
+                        player.name,
+                        0,
+                        0,
+                        0
+                });
+            }
+        }
+
+        JTable table = new JTable(model);
+
+        if (index == 1) {
+            p.add(empty("Ainda não existem dados estatísticos registados para este torneio."), BorderLayout.CENTER);
+        } else {
+            p.add(new JScrollPane(table), BorderLayout.CENTER);
+        }
+
         setPage("Estatísticas Gerais", p);
     }
 
     private void showBillingPage() {
         double ticketRevenue = store.soldTickets.stream().mapToDouble(s -> s.price).sum();
-        JPanel p = new JPanel(new BorderLayout(12,12));
+        double sponsorRevenue = store.sponsors.stream().mapToDouble(s -> s.value).sum();
+        double totalRevenue = ticketRevenue + sponsorRevenue;
+
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
         JTextArea summary = new JTextArea();
         summary.setEditable(false);
-        summary.setFont(new Font("Monospaced", Font.PLAIN, 15));
-        summary.setText("Receita de bilhetes: " + money(ticketRevenue) + "\nReceita de patrocínios: 0,00 €\nFaturação total: " + money(ticketRevenue));
-        DefaultTableModel model = tableModel("Código", "Jogo", "Bancada", "Preço");
-        for (SoldTicket st : store.soldTickets) model.addRow(new Object[]{st.code, st.batch.game.teamA + " vs " + st.batch.game.teamB, st.batch.stand.name, money(st.price)});
-        p.add(summary, BorderLayout.NORTH);
-        p.add(store.soldTickets.isEmpty() ? empty("Não existem dados financeiros registados para este torneio.") : new JScrollPane(new JTable(model)), BorderLayout.CENTER);
-        setPage("Faturação", p);
+        summary.setFont(new Font("Arial", Font.PLAIN, 16));
+        summary.setText(
+                "Receita de Patrocínios: " + money(sponsorRevenue) + "\n\n" +
+                        "Receita de Jogos: " + money(ticketRevenue) + "\n\n" +
+                        "Faturação Total: " + money(totalRevenue)
+        );
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 80, 10));
+        JButton byGames = btn("Ver faturação por jogos");
+        JButton bySponsors = btn("Ver faturação por patrocínios");
+
+        buttons.add(byGames);
+        buttons.add(bySponsors);
+
+        byGames.addActionListener(e -> showBillingByGamesPage());
+        bySponsors.addActionListener(e -> showBillingBySponsorsPage());
+
+        p.add(summary, BorderLayout.CENTER);
+        p.add(buttons, BorderLayout.SOUTH);
+
+        setPage("Faturação " + store.tournament.name, p);
+    }
+
+    private void showBillingByGamesPage() {
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        DefaultTableModel model = tableModel(
+                "Jogo",
+                "Data",
+                "Estádio",
+                "Bilhetes vendidos",
+                "Receita"
+        );
+
+        for (TicketBatch tb : store.tickets) {
+            model.addRow(new Object[]{
+                    tb.game.teamA + " x " + tb.game.teamB,
+                    tb.game.dateTime,
+                    tb.game.stadium == null ? "" : tb.game.stadium.name,
+                    tb.sold,
+                    money(tb.sold * tb.price)
+            });
+        }
+
+        JTable table = new JTable(model);
+
+        JButton back = btn("Voltar");
+        back.addActionListener(e -> showBillingPage());
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        bottom.add(back);
+
+        p.add(store.tickets.isEmpty()
+                ? empty("Não existem dados financeiros registados para jogos.")
+                : new JScrollPane(table), BorderLayout.CENTER);
+
+        p.add(bottom, BorderLayout.SOUTH);
+
+        setPage("Faturação por Jogos", p);
+    }
+
+    private void showBillingBySponsorsPage() {
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        DefaultTableModel model = tableModel(
+                "Patrocínios",
+                "Valor"
+        );
+
+        for (Sponsor s : store.sponsors) {
+            model.addRow(new Object[]{
+                    s.name,
+                    money(s.value)
+            });
+        }
+
+        JTable table = new JTable(model);
+
+        JButton back = btn("Voltar");
+        back.addActionListener(e -> showBillingPage());
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        bottom.add(back);
+
+        p.add(store.sponsors.isEmpty()
+                ? empty("Não existem dados financeiros registados para patrocínios.")
+                : new JScrollPane(table), BorderLayout.CENTER);
+
+        p.add(bottom, BorderLayout.SOUTH);
+
+        setPage("Faturação dos Patrocínios", p);
     }
 
     private JPanel formPanel() {
@@ -1035,18 +1590,26 @@ public class TorneioApp extends JFrame {
         List<Game> games = new ArrayList<>();
         List<TicketBatch> tickets = new ArrayList<>();
         List<SoldTicket> soldTickets = new ArrayList<>();
+        List<Sponsor> sponsors = new ArrayList<>();
+
         boolean calendarGenerated = false;
         private int sequence = 1;
+
         private Store() {}
+
         static Store getInstance() {
             if (instance == null) instance = new Store();
             return instance;
         }
+
         int nextId() { return sequence++; }
+
         Team findTeam(int id) { return teams.stream().filter(t -> t.id == id).findFirst().orElse(null); }
         Stadium findStadium(int id) { return stadiums.stream().filter(s -> s.id == id).findFirst().orElse(null); }
         Game findGame(int id) { return games.stream().filter(g -> g.id == id).findFirst().orElse(null); }
         TicketBatch findTicket(int id) { return tickets.stream().filter(t -> t.id == id).findFirst().orElse(null); }
+        Sponsor findSponsor(int id) { return sponsors.stream().filter(s -> s.id == id).findFirst().orElse(null); }
+
         boolean teamNameExists(String name, Team ignore) { return teams.stream().anyMatch(t -> t != ignore && t.name.equalsIgnoreCase(name)); }
         boolean teamAcronymExists(String acronym, Team ignore) { return teams.stream().anyMatch(t -> t != ignore && t.acronym.equalsIgnoreCase(acronym)); }
         boolean playerNumberExists(Team team, int number, Player ignore) { return team.players.stream().anyMatch(p -> p != ignore && p.number == number); }
@@ -1115,6 +1678,20 @@ public class TorneioApp extends JFrame {
         Game game; Stand stand; double price;
         TicketBatch(int id, Game game, Stand stand, double price, int available) {
             this.id = id; this.game = game; this.stand = stand; this.price = price; this.available = available;
+        }
+    }
+
+    static class Sponsor {
+        int id;
+        String name;
+        String description;
+        double value;
+
+        Sponsor(int id, String name, String description, double value) {
+            this.id = id;
+            this.name = name;
+            this.description = description;
+            this.value = value;
         }
     }
 
