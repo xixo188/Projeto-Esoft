@@ -1,53 +1,67 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class TorneioPainelControlador {
 
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     public static void showTorneioPage(TorneioApp app, Store store) {
-        JPanel p = new JPanel(new BorderLayout(12, 12));
 
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton create = new JButton("Criar Torneio");
-        top.add(create);
+        if (store.tournament == null) {
+            JPanel panel = new JPanel(new BorderLayout(12, 12));
 
-        DefaultTableModel model = new DefaultTableModel(
-                new String[]{"ID", "Torneio", "Estado"}, 0
-        ) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+            JLabel mensagem = new JLabel(
+                    "Ainda não existe nenhum torneio criado.",
+                    SwingConstants.CENTER
+            );
 
-        TorneioApp.Tournament t = store.tournament;
-        model.addRow(new Object[]{1, t.name, t.state});
+            mensagem.setFont(new Font("Arial", Font.PLAIN, 18));
 
-        JTable table = new JTable(model);
+            JButton criarButton = new JButton("Criar Torneio");
 
-        create.addActionListener(e -> showTournamentCreateForm(app, store));
+            JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            buttons.add(criarButton);
 
-        table.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    showTournamentDetails(app, store);
-                }
-            }
-        });
+            criarButton.addActionListener(e ->
+                    showTournamentCreateForm(app, store)
+            );
 
-        p.add(top, BorderLayout.NORTH);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
+            panel.add(buttons, BorderLayout.NORTH);
+            panel.add(mensagem, BorderLayout.CENTER);
 
-        app.setPage("Lista de Torneios", p);
+            app.setPage("Torneio", panel);
+            return;
+        }
+
+        showTournamentDetails(app, store);
     }
 
-    private static void showTournamentDetails(TorneioApp app, Store store) {
-        TorneioApp.Tournament t = store.tournament;
+    private static void showTournamentDetails(
+            TorneioApp app,
+            Store store
+    ) {
+        TorneioApp.Tournament tournament = store.tournament;
 
-        JPanel p = new JPanel(new BorderLayout(12, 12));
+        if (tournament == null) {
+            showTorneioPage(app, store);
+            return;
+        }
+
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
 
         DefaultTableModel model = new DefaultTableModel(
-                new String[]{"Início", "Fim", "Estado", "Número Equipas"}, 0
+                new String[]{
+                        "Início",
+                        "Fim",
+                        "Estado",
+                        "Número de Equipas"
+                },
+                0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -56,184 +70,328 @@ public class TorneioPainelControlador {
         };
 
         model.addRow(new Object[]{
-                t.startDate,
-                t.endDate,
-                t.state,
+                tournament.startDate,
+                tournament.endDate,
+                tournament.state,
                 store.teams.size()
         });
 
         JTable table = new JTable(model);
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton back = new JButton("Voltar");
-        JButton edit = new JButton("Editar Torneio");
 
-        buttons.add(back);
-        buttons.add(edit);
+        JButton backButton = new JButton("Voltar");
+        JButton editButton = new JButton("Editar Torneio");
 
-        back.addActionListener(e -> showTorneioPage(app, store));
-        edit.addActionListener(e -> showTournamentForm(app, store));
+        buttons.add(backButton);
+        buttons.add(editButton);
 
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
-        p.add(buttons, BorderLayout.SOUTH);
+        backButton.addActionListener(e ->
+                showTorneioPage(app, store)
+        );
 
-        app.setPage(t.name, p);
+        editButton.addActionListener(e -> {
+            if (store.calendarGenerated) {
+                app.error(
+                        "Não é possível editar os dados do torneio após existir calendarização."
+                );
+                return;
+            }
+
+            showTournamentForm(app, store);
+        });
+
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        panel.add(buttons, BorderLayout.SOUTH);
+
+        app.setPage(tournament.name, panel);
     }
 
-    private static void showTournamentForm(TorneioApp app, Store store) {
-        TorneioApp.Tournament t = store.tournament;
+    private static void showTournamentForm(
+            TorneioApp app,
+            Store store
+    ) {
+        TorneioApp.Tournament tournament = store.tournament;
 
-        JTextField name = new JTextField(t.name);
-        JTextField start = new JTextField(t.startDate);
-        JTextField end = new JTextField(t.endDate);
-        JTextField rest = new JTextField(String.valueOf(t.restDays));
+        if (tournament == null) {
+            showTournamentCreateForm(app, store);
+            return;
+        }
+
+        JTextField nameField =
+                new JTextField(tournament.name);
+
+        JFormattedTextField startField =
+                dateField(tournament.startDate);
+
+        JFormattedTextField endField =
+                dateField(tournament.endDate);
+
+        JTextField restField =
+                new JTextField(String.valueOf(tournament.restDays));
 
         JPanel form = formPanel();
-        addRow(form, "Nome *", name, 0);
-        addRow(form, "Data início *", start, 1);
-        addRow(form, "Data fim *", end, 2);
-        addRow(form, "Descanso mínimo *", rest, 3);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancel = new JButton("Cancelar");
-        JButton save = new JButton("Confirmar");
+        addRow(form, "Nome *", nameField, 0);
+        addRow(form, "Data de início *", startField, 1);
+        addRow(form, "Data de fim *", endField, 2);
+        addRow(form, "Descanso mínimo *", restField, 3);
 
-        buttons.add(cancel);
-        buttons.add(save);
+        JPanel buttons = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT)
+        );
 
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(form, BorderLayout.NORTH);
-        p.add(buttons, BorderLayout.SOUTH);
+        JButton cancelButton = new JButton("Cancelar");
+        JButton saveButton = new JButton("Confirmar");
 
-        cancel.addActionListener(e -> showTorneioPage(app, store));
+        buttons.add(cancelButton);
+        buttons.add(saveButton);
 
-        save.addActionListener(e -> {
-            if (blank(name, start, end, rest)) {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        panel.add(form, BorderLayout.NORTH);
+        panel.add(buttons, BorderLayout.SOUTH);
+
+        cancelButton.addActionListener(e ->
+                showTournamentDetails(app, store)
+        );
+
+        saveButton.addActionListener(e -> {
+            String name = nameField.getText().trim();
+            String start = startField.getText().trim();
+            String end = endField.getText().trim();
+            String rest = restField.getText().trim();
+
+            if (name.isEmpty() || rest.isEmpty()) {
                 app.error("Preenche todos os campos obrigatórios.");
                 return;
             }
 
-            Integer restVal;
-            try {
-                restVal = Integer.parseInt(rest.getText().trim());
-            } catch (NumberFormatException ex) {
-                app.error("O descanso mínimo tem de ser um número inteiro.");
+            LocalDate startDate = parseDate(
+                    app,
+                    start,
+                    "A data de início é inválida."
+            );
+
+            LocalDate endDate = parseDate(
+                    app,
+                    end,
+                    "A data de fim é inválida."
+            );
+
+            if (startDate == null || endDate == null) {
                 return;
             }
 
-            if (restVal < 2) {
-                app.error("O tempo de descanso entre jogos não pode ser inferior a 2 dias.");
+            if (!endDate.isAfter(startDate)) {
+                app.error(
+                        "A data de fim deve ser posterior à data de início."
+                );
                 return;
             }
 
-            t.name = name.getText().trim();
-            t.startDate = start.getText().trim();
-            t.endDate = end.getText().trim();
-            t.restDays = restVal;
+            Integer restValue = parseRestDays(app, rest);
+
+            if (restValue == null) {
+                return;
+            }
+
+            tournament.name = name;
+            tournament.startDate = start;
+            tournament.endDate = end;
+            tournament.restDays = restValue;
 
             app.info("Dados do torneio guardados com sucesso.");
-            showTorneioPage(app, store);
+
+            showTournamentDetails(app, store);
         });
 
-        app.setPage("Editar Torneio", p);
+        app.setPage("Editar Torneio", panel);
     }
 
-    private static void showTournamentCreateForm(TorneioApp app, Store store) {
-        JTextField name = new JTextField();
-        JFormattedTextField start = dateField("");
-        JFormattedTextField end = dateField("");
-        JTextField rest = new JTextField("2");
+    private static void showTournamentCreateForm(
+            TorneioApp app,
+            Store store
+    ) {
+        JTextField nameField = new JTextField();
+        JFormattedTextField startField = dateField("");
+        JFormattedTextField endField = dateField("");
+        JTextField restField = new JTextField("2");
 
         JPanel form = formPanel();
-        addRow(form, "Nome do Torneio *", name, 0);
-        addRow(form, "Data de início *", start, 1);
-        addRow(form, "Data de fim *", end, 2);
-        addRow(form, "Descanso entre jogos *", rest, 3);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancel = new JButton("Cancelar");
-        JButton save = new JButton("Confirmar");
+        addRow(form, "Nome do Torneio *", nameField, 0);
+        addRow(form, "Data de início *", startField, 1);
+        addRow(form, "Data de fim *", endField, 2);
+        addRow(form, "Descanso entre jogos *", restField, 3);
 
-        buttons.add(cancel);
-        buttons.add(save);
+        JPanel buttons = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT)
+        );
 
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(form, BorderLayout.NORTH);
-        p.add(buttons, BorderLayout.SOUTH);
+        JButton cancelButton = new JButton("Cancelar");
+        JButton saveButton = new JButton("Confirmar");
 
-        cancel.addActionListener(e -> showTorneioPage(app, store));
+        buttons.add(cancelButton);
+        buttons.add(saveButton);
 
-        save.addActionListener(e -> {
-            if (blank(name, start, end, rest)) {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        panel.add(form, BorderLayout.NORTH);
+        panel.add(buttons, BorderLayout.SOUTH);
+
+        cancelButton.addActionListener(e ->
+                showTorneioPage(app, store)
+        );
+
+        saveButton.addActionListener(e -> {
+            String name = nameField.getText().trim();
+            String start = startField.getText().trim();
+            String end = endField.getText().trim();
+            String rest = restField.getText().trim();
+
+            if (name.isEmpty() || rest.isEmpty()) {
                 app.error("Erro: Campos obrigatórios em falta.");
                 return;
             }
 
-            Integer restVal;
-            try {
-                restVal = Integer.parseInt(rest.getText().trim());
-            } catch (NumberFormatException ex) {
-                app.error("O descanso entre jogos tem de ser um número inteiro.");
+            LocalDate startDate = parseDate(
+                    app,
+                    start,
+                    "A data de início é inválida."
+            );
+
+            LocalDate endDate = parseDate(
+                    app,
+                    end,
+                    "A data de fim é inválida."
+            );
+
+            if (startDate == null || endDate == null) {
                 return;
             }
 
-            if (restVal < 2) {
-                app.error("O tempo de descanso entre jogos não pode ser inferior a 2 dias.");
+            if (!endDate.isAfter(startDate)) {
+                app.error(
+                        "A data de fim deve ser posterior à data de início."
+                );
                 return;
             }
 
-            store.tournament.name = name.getText().trim();
-            store.tournament.startDate = start.getText().trim();
-            store.tournament.endDate = end.getText().trim();
-            store.tournament.restDays = restVal;
+            Integer restValue = parseRestDays(app, rest);
+
+            if (restValue == null) {
+                return;
+            }
+
+            store.tournament = new TorneioApp.Tournament(
+                    name,
+                    start,
+                    end,
+                    restValue
+            );
+
             store.tournament.state = "em preparação";
+            store.calendarGenerated = false;
 
             app.info("Torneio criado com sucesso.");
-            showTorneioPage(app, store);
+
+            showTournamentDetails(app, store);
         });
 
-        app.setPage("Criar Torneio", p);
+        app.setPage("Criar Torneio", panel);
+    }
+
+    private static Integer parseRestDays(
+            TorneioApp app,
+            String value
+    ) {
+        try {
+            int restDays = Integer.parseInt(value.trim());
+
+            if (restDays < 2) {
+                app.error(
+                        "O tempo de descanso entre jogos não pode ser inferior a 2 dias."
+                );
+                return null;
+            }
+
+            return restDays;
+
+        } catch (NumberFormatException exception) {
+            app.error(
+                    "O descanso entre jogos tem de ser um número inteiro."
+            );
+            return null;
+        }
+    }
+
+    private static LocalDate parseDate(
+            TorneioApp app,
+            String value,
+            String errorMessage
+    ) {
+        try {
+            return LocalDate.parse(value, DATE_FORMAT);
+        } catch (DateTimeParseException exception) {
+            app.error(errorMessage);
+            return null;
+        }
     }
 
     private static JPanel formPanel() {
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        form.setBorder(
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        );
+
         return form;
     }
 
-    private static void addRow(JPanel form, String label, JComponent comp, int row) {
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(6, 6, 6, 6);
-        c.fill = GridBagConstraints.HORIZONTAL;
+    private static void addRow(
+            JPanel form,
+            String label,
+            JComponent component,
+            int row
+    ) {
+        GridBagConstraints constraints = new GridBagConstraints();
 
-        c.gridx = 0;
-        c.gridy = row;
-        c.weightx = 0;
-        form.add(new JLabel(label), c);
+        constraints.insets = new Insets(6, 6, 6, 6);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
 
-        c.gridx = 1;
-        c.weightx = 1;
-        comp.setPreferredSize(new Dimension(320, 28));
-        form.add(comp, c);
-    }
+        constraints.gridx = 0;
+        constraints.gridy = row;
+        constraints.weightx = 0;
 
-    private static boolean blank(JTextField... fields) {
-        for (JTextField f : fields) {
-            if (f.getText().trim().isEmpty()) return true;
-        }
-        return false;
+        form.add(new JLabel(label), constraints);
+
+        constraints.gridx = 1;
+        constraints.weightx = 1;
+
+        component.setPreferredSize(new Dimension(320, 28));
+
+        form.add(component, constraints);
     }
 
     private static JFormattedTextField dateField(String value) {
         try {
-            javax.swing.text.MaskFormatter mask = new javax.swing.text.MaskFormatter("##/##/####");
-            mask.setPlaceholderCharacter('0');
+            javax.swing.text.MaskFormatter mask =
+                    new javax.swing.text.MaskFormatter("##/##/####");
 
-            JFormattedTextField field = new JFormattedTextField(mask);
-            field.setValue(value == null ? "" : value);
+            mask.setPlaceholderCharacter('_');
+
+            JFormattedTextField field =
+                    new JFormattedTextField(mask);
+
+            if (value != null && !value.isBlank()) {
+                field.setText(value);
+            }
+
             return field;
-        } catch (java.text.ParseException e) {
-            return new JFormattedTextField();
+
+        } catch (java.text.ParseException exception) {
+            return new JFormattedTextField(value);
         }
     }
 }
