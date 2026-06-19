@@ -87,5 +87,31 @@ public class Store {
         // 4. Patrocínios Iniciais
         patrocinios.add(new Patrocinio(nextId(), "Sagres", "Sponsor de Bebidas", 50000.00));
         patrocinios.add(new Patrocinio(nextId(), "Betano", "Sponsor Principal", 120000.00));
+
+        tickets.add(new TorneioApp.TicketBatch(
+                nextId(),
+                q1,
+                luz.bancadas.get(0),
+                100.00,
+                26
+        ));
+
+        tickets.add(new TorneioApp.TicketBatch(
+                nextId(),
+                q4,
+                pedreira.bancadas.get(0),
+                150.00,
+                20
+        ));
+
+        tickets.add(new TorneioApp.TicketBatch(
+                nextId(),
+                q4,
+                pedreira.bancadas.get(0),
+                69.00,
+                10
+        ));
     }
+
+
 }

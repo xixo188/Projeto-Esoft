@@ -53,12 +53,12 @@ public class TorneioApp extends JFrame {
         JButton faturacao = btn("Faturação");
 
         home.addActionListener(e -> showHome());
-        torneios.addActionListener(e -> showTorneioPage());
+        torneios.addActionListener(e -> TorneioPainelControlador.showTorneioPage(this, store));
         equipas.addActionListener(e -> showTeamsPage());
         estadios.addActionListener(e -> showStadiumsPage());
         calendario.addActionListener(e -> showCalendarPage());
-        bilhetes.addActionListener(e -> showTicketsPage());
-        patrocinadores.addActionListener(e -> showSponsorsPage());
+        bilhetes.addActionListener(e -> BilhetePainelControlador.showTicketsPage(this, store));
+        patrocinadores.addActionListener(e -> PatrocinioPainelControlador.showSponsorsPage(this, store));
         estatisticas.addActionListener(e -> showStatsPage());
         faturacao.addActionListener(e -> showBillingPage());
 
@@ -105,154 +105,6 @@ public class TorneioApp extends JFrame {
         c.add(t, BorderLayout.NORTH);
         c.add(d, BorderLayout.CENTER);
         return c;
-    }
-
-    private JFormattedTextField dateField(String value) {
-        try {
-            MaskFormatter mask = new MaskFormatter("##/##/####");
-            mask.setPlaceholderCharacter('0');
-
-            JFormattedTextField field = new JFormattedTextField(mask);
-            field.setValue(value == null ? "" : value);
-            return field;
-        } catch (java.text.ParseException e) {
-            return new JFormattedTextField();
-        }
-    }
-
-    private void showTorneioPage() {
-        JPanel p = new JPanel(new BorderLayout(12, 12));
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton create = btn("Criar Torneio");
-        top.add(create);
-
-        DefaultTableModel model = tableModel("ID", "Torneio", "Estado");
-        Tournament t = store.tournament;
-        model.addRow(new Object[]{1, t.name, t.state});
-
-        JTable table = new JTable(model);
-        create.addActionListener(e -> showTournamentCreateForm());
-        table.addMouseListener(doubleClick(() -> showTournamentDetails()));
-
-        p.add(top, BorderLayout.NORTH);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
-
-        setPage("Lista de Torneios", p);
-    }
-
-    private void showTournamentDetails() {
-        Tournament t = store.tournament;
-        JPanel p = new JPanel(new BorderLayout(12, 12));
-        DefaultTableModel model = tableModel("Início", "Fim", "Estado", "Número Equipas");
-        model.addRow(new Object[]{t.startDate, t.endDate, t.state, store.teams.size()});
-
-        JTable table = new JTable(model);
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton back = btn("Voltar");
-        JButton edit = btn("Editar Torneio");
-
-        buttons.add(back);
-        buttons.add(edit);
-
-        back.addActionListener(e -> showTorneioPage());
-        edit.addActionListener(e -> showTournamentForm());
-
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
-        p.add(buttons, BorderLayout.SOUTH);
-
-        setPage(t.name, p);
-    }
-
-    private void showTournamentForm() {
-        Tournament t = store.tournament;
-        JTextField name = new JTextField(t.name);
-        JTextField start = new JTextField(t.startDate);
-        JTextField end = new JTextField(t.endDate);
-        JTextField rest = new JTextField(String.valueOf(t.restDays));
-
-        JPanel form = formPanel();
-        addRow(form, "Nome *", name, 0);
-        addRow(form, "Data início *", start, 1);
-        addRow(form, "Data fim *", end, 2);
-        addRow(form, "Descanso mínimo *", rest, 3);
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancel = btn("Cancelar");
-        JButton save = btn("Confirmar");
-        buttons.add(cancel);
-        buttons.add(save);
-
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(form, BorderLayout.NORTH);
-        p.add(buttons, BorderLayout.SOUTH);
-
-        cancel.addActionListener(e -> showTorneioPage());
-        save.addActionListener(e -> {
-            if (blank(name, start, end, rest)) {
-                error("Preenche todos os campos obrigatórios.");
-                return;
-            }
-            Integer restVal = parseInt(rest.getText(), "O descanso mínimo tem de ser um número inteiro.");
-            if (restVal == null) return;
-            if (restVal < 2) {
-                error("O tempo de descanso entre jogos não pode ser inferior a 2 dias.");
-                return;
-            }
-            t.name = name.getText().trim();
-            t.startDate = start.getText().trim();
-            t.endDate = end.getText().trim();
-            t.restDays = restVal;
-            info("Dados do torneio guardados com sucesso.");
-            showTorneioPage();
-        });
-        setPage("Editar Torneio", p);
-    }
-
-    private void showTournamentCreateForm() {
-        JTextField name = new JTextField();
-        JFormattedTextField start = dateField("");
-        JFormattedTextField end = dateField("");
-        JTextField rest = new JTextField("2");
-
-        JPanel form = formPanel();
-        addRow(form, "Nome do Torneio *", name, 0);
-        addRow(form, "Data de início *", start, 1);
-        addRow(form, "Data de fim *", end, 2);
-        addRow(form, "Descanso entre jogos *", rest, 3);
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancel = btn("Cancelar");
-        JButton save = btn("Confirmar");
-        buttons.add(cancel);
-        buttons.add(save);
-
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(form, BorderLayout.NORTH);
-        p.add(buttons, BorderLayout.SOUTH);
-
-        cancel.addActionListener(e -> showTorneioPage());
-
-        save.addActionListener(e -> {
-            if (blank(name, start, end, rest)) {
-                error("Erro: Campos obrigatórios em falta.");
-                return;
-            }
-            Integer restVal = parseInt(rest.getText(), "O descanso entre jogos tem de ser um número inteiro.");
-            if (restVal == null) return;
-            if (restVal < 2) {
-                error("O tempo de descanso entre jogos não pode ser inferior a 2 dias.");
-                return;
-            }
-            store.tournament.name = name.getText().trim();
-            store.tournament.startDate = start.getText().trim();
-            store.tournament.endDate = end.getText().trim();
-            store.tournament.restDays = restVal;
-            store.tournament.state = "em preparação";
-            info("Torneio criado com sucesso.");
-            showTorneioPage();
-        });
-
-        setPage("Criar Torneio", p);
     }
 
     private void showTeamsPage() {
@@ -577,464 +429,352 @@ public class TorneioApp extends JFrame {
     }
 
     public void showGameDetails(Game g) {
+
+        boolean jogoComEstatisticas = g.state == GameState.EM_CURSO || g.state == GameState.CONCLUIDO;
+
+        int yellowA = jogoComEstatisticas ? g.yellowA : 0;
+        int yellowB = jogoComEstatisticas ? g.yellowB : 0;
+        int redA = jogoComEstatisticas ? g.redA : 0;
+        int redB = jogoComEstatisticas ? g.redB : 0;
+        int goalsA = jogoComEstatisticas ? g.goalsA : 0;
+        int goalsB = jogoComEstatisticas ? g.goalsB : 0;
+        int possessionA = jogoComEstatisticas ? g.possessionA : 0;
+        int possessionB = jogoComEstatisticas ? (100 - g.possessionA) : 0;
+
+
         JPanel p = new JPanel(new BorderLayout(12, 12));
-        JTextArea infoArea = new JTextArea();
-        infoArea.setEditable(false);
-        infoArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        infoArea.setText(
-                "Fase: " + g.phase + "\n" +
-                        "Jogo: " + g.teamA + " vs " + g.teamB + "\n" +
-                        "Data/Hora: " + g.dateTime + "\n" +
-                        "Estádio: " + (g.stadium == null ? "" : g.stadium.nome) + "\n" +
-                        "Estado: " + g.state + "\n" +
-                        "Resultado: " + g.resultText() + "\n" +
-                        "Cartões amarelos: " + g.yellowA + " - " + g.yellowB + "\n" +
-                        "Cartões vermelhos: " + g.redA + " - " + g.redB + "\n" +
-                        "Posse de bola: " + g.possessionA + "% - " + (100 - g.possessionA) + "%\n"
-        );
+        JPanel dados = new JPanel(new GridBagLayout());
+
+        dados.setBackground(new Color(220, 220, 220));
+        dados.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        dados.setPreferredSize(new Dimension(800, 430));
+        dados.setBackground(new Color(220, 220, 220));
+        dados.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(4, 8, 4, 8);
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel equipaA = new JLabel(g.teamA, SwingConstants.CENTER);
+        JLabel equipaB = new JLabel(g.teamB, SwingConstants.CENTER);
+
+        equipaA.setFont(new Font("Arial", Font.BOLD, 24));
+        equipaB.setFont(new Font("Arial", Font.BOLD, 24));
+
+        JTextField data = new JTextField(g.dateTime);
+        JTextField estado = new JTextField(g.state.toString());
+        data.setPreferredSize(new Dimension(160, 30));
+
+        JTextField amarelosA = new JTextField(String.valueOf(yellowA));
+        JTextField amarelosB = new JTextField(String.valueOf(yellowB));
+        JTextField vermelhosA = new JTextField(String.valueOf(redA));
+        JTextField vermelhosB = new JTextField(String.valueOf(redB));
+        JTextField posseA = new JTextField(String.valueOf(possessionA));
+        JTextField posseB = new JTextField(String.valueOf(possessionB));
+        JTextField golosA = new JTextField(String.valueOf(goalsA));
+        JTextField golosB = new JTextField(String.valueOf(goalsB));
+
+        JTextField[] fields = {
+                data, estado, amarelosA, amarelosB, vermelhosA, vermelhosB,
+                posseA, posseB, golosA, golosB
+        };
+
+        for (JTextField f : fields) {
+            f.setEditable(false);
+            f.setHorizontalAlignment(JTextField.CENTER);
+            f.setPreferredSize(new Dimension(115, 30));
+            f.setFont(new Font("Arial", Font.PLAIN, 14));
+        }
+        data.setPreferredSize(new Dimension(200, 30));
+
+        c.gridx = 0; c.gridy = 0;
+        dados.add(new JLabel("img", SwingConstants.CENTER), c);
+
+        c.gridx = 1;
+        dados.add(new JLabel("Data", SwingConstants.CENTER), c);
+
+        c.gridx = 2;
+        dados.add(new JLabel("Estado", SwingConstants.CENTER), c);
+
+        c.gridx = 3;
+        dados.add(new JLabel("img", SwingConstants.CENTER), c);
+
+        c.gridx = 0; c.gridy = 1;
+        dados.add(equipaA, c);
+
+        c.gridx = 1;
+        dados.add(data, c);
+
+        c.gridx = 2;
+        dados.add(estado, c);
+
+        c.gridx = 3;
+        dados.add(equipaB, c);
+
+        c.gridx = 0; c.gridy = 2;
+        dados.add(new JLabel(g.teamA, SwingConstants.CENTER), c);
+
+        c.gridx = 1;
+        dados.add(new JLabel("vs", SwingConstants.CENTER), c);
+
+        c.gridx = 3;
+        dados.add(new JLabel(g.teamB, SwingConstants.CENTER), c);
+
+        c.gridx = 0; c.gridy = 3;
+        dados.add(amarelosA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Cartão Amarelo", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(amarelosB, c);
+
+        c.gridx = 0; c.gridy = 4;
+        dados.add(vermelhosA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Cartão Vermelho", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(vermelhosB, c);
+
+        c.gridx = 0; c.gridy = 5;
+        dados.add(posseA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Posse de bola", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(posseB, c);
+
+        c.gridx = 0; c.gridy = 6;
+        dados.add(golosA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Golos", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(golosB, c);
+
+        c.gridx = 0; c.gridy = 7; c.gridwidth = 4;
+        dados.add(new JLabel("Estádio: " + (g.stadium == null ? "" : g.stadium.nome)), c);
+
+        JPanel center = new JPanel(new GridBagLayout());
+        center.add(dados);
+
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton back = btn("Voltar");
         JButton edit = btn("Editar Dados");
+
         buttons.add(back);
         buttons.add(edit);
-        back.addActionListener(e -> showCalendarPage());
+
+        back.addActionListener(e -> Calendario.showCalendario(this, store));
         edit.addActionListener(e -> showGameDataForm(g));
+
         p.add(buttons, BorderLayout.NORTH);
-        p.add(new JScrollPane(infoArea), BorderLayout.CENTER);
+        p.add(center, BorderLayout.CENTER);
+
         setPage("Dados Jogo", p);
     }
 
     private void showGameDataForm(Game g) {
-        JTextField goalsA = new JTextField(String.valueOf(g.goalsA));
-        JTextField goalsB = new JTextField(String.valueOf(g.goalsB));
-        JTextField yellowA = new JTextField(String.valueOf(g.yellowA));
-        JTextField yellowB = new JTextField(String.valueOf(g.yellowB));
-        JTextField redA = new JTextField(String.valueOf(g.redA));
-        JTextField redB = new JTextField(String.valueOf(g.redB));
-        JTextField possessionA = new JTextField(String.valueOf(g.possessionA));
-        JPanel form = formPanel();
-        addRow(form, "Golos " + g.teamA, goalsA, 0);
-        addRow(form, "Golos " + g.teamB, goalsB, 1);
-        addRow(form, "Amarelos " + g.teamA, yellowA, 2);
-        addRow(form, "Amarelos " + g.teamB, yellowB, 3);
-        addRow(form, "Vermelhos " + g.teamA, redA, 4);
-        addRow(form, "Vermelhos " + g.teamB, redB, 5);
-        addRow(form, "Posse bola equipa A (%)", possessionA, 6);
+        boolean jogoComEstatisticas = g.state == GameState.EM_CURSO || g.state == GameState.CONCLUIDO;
+
+        int yellowA = jogoComEstatisticas ? g.yellowA : 0;
+        int yellowB = jogoComEstatisticas ? g.yellowB : 0;
+        int redA = jogoComEstatisticas ? g.redA : 0;
+        int redB = jogoComEstatisticas ? g.redB : 0;
+        int goalsA = jogoComEstatisticas ? g.goalsA : 0;
+        int goalsB = jogoComEstatisticas ? g.goalsB : 0;
+        int possessionA = jogoComEstatisticas ? g.possessionA : 0;
+        int possessionB = jogoComEstatisticas ? (100 - g.possessionA) : 0;
+
+        JPanel p = new JPanel(new BorderLayout(12, 12));
+
+        JPanel dados = new JPanel(new GridBagLayout());
+        dados.setBackground(new Color(220, 220, 220));
+        dados.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        dados.setPreferredSize(new Dimension(800, 430));
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(4, 8, 4, 8);
+        c.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel equipaA = new JLabel(g.teamA, SwingConstants.CENTER);
+        JLabel equipaB = new JLabel(g.teamB, SwingConstants.CENTER);
+
+        equipaA.setFont(new Font("Arial", Font.BOLD, 24));
+        equipaB.setFont(new Font("Arial", Font.BOLD, 24));
+
+        JTextField data = field(g.dateTime, 190);
+        JTextField estado = field(g.state.toString(), 120);
+
+        JTextField amarelosA = field(String.valueOf(yellowA), 70);
+        JTextField amarelosB = field(String.valueOf(yellowB), 70);
+        JTextField vermelhosA = field(String.valueOf(redA), 70);
+        JTextField vermelhosB = field(String.valueOf(redB), 70);
+        JTextField posseA = field(String.valueOf(possessionA), 70);
+        JTextField posseB = field(String.valueOf(possessionB), 70);
+        JTextField golosA = field(String.valueOf(goalsA), 70);
+        JTextField golosB = field(String.valueOf(goalsB), 70);
+
+        c.gridx = 0; c.gridy = 0;
+        dados.add(new JLabel("img", SwingConstants.CENTER), c);
+
+        c.gridx = 1;
+        dados.add(new JLabel("Data", SwingConstants.CENTER), c);
+
+        c.gridx = 2;
+        dados.add(new JLabel("Estado", SwingConstants.CENTER), c);
+
+        c.gridx = 3;
+        dados.add(new JLabel("img", SwingConstants.CENTER), c);
+
+        c.gridx = 0; c.gridy = 1;
+        dados.add(equipaA, c);
+
+        c.gridx = 1;
+        dados.add(data, c);
+
+        c.gridx = 2;
+        dados.add(estado, c);
+
+        c.gridx = 3;
+        dados.add(equipaB, c);
+
+        c.gridx = 0; c.gridy = 2;
+        dados.add(new JLabel(g.teamA, SwingConstants.CENTER), c);
+
+        c.gridx = 1;
+        dados.add(new JLabel("vs", SwingConstants.CENTER), c);
+
+        c.gridx = 3;
+        dados.add(new JLabel(g.teamB, SwingConstants.CENTER), c);
+
+        addLinhaEditavel(dados, c, 3, amarelosA, "Cartão Amarelo", amarelosB);
+        addLinhaEditavel(dados, c, 4, vermelhosA, "Cartão Vermelho", vermelhosB);
+        addLinhaEditavel(dados, c, 5, posseA, "Posse de bola", posseB);
+        addLinhaEditavel(dados, c, 6, golosA, "Golos", golosB);
+
+        c.gridx = 0; c.gridy = 7; c.gridwidth = 4;
+        dados.add(new JLabel("Estádio: " + (g.stadium == null ? "" : g.stadium.nome)), c);
+        c.gridwidth = 1;
+
+        JPanel center = new JPanel(new GridBagLayout());
+        center.add(dados);
+
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton cancel = btn("Cancelar");
         JButton save = btn("Confirmar");
+
         buttons.add(cancel);
         buttons.add(save);
+
         cancel.addActionListener(e -> showGameDetails(g));
+
         save.addActionListener(e -> {
             if (g.state != GameState.EM_CURSO) {
                 error("Não se pode inserir dados enquanto o jogo não está a decorrer.");
                 return;
             }
-            Integer ga = parseNonNegative(goalsA.getText(), "Golos inválidos.");
-            Integer gb = parseNonNegative(goalsB.getText(), "Golos inválidos.");
-            Integer ya = parseNonNegative(yellowA.getText(), "Cartões inválidos.");
-            Integer yb = parseNonNegative(yellowB.getText(), "Cartões inválidos.");
-            Integer ra = parseNonNegative(redA.getText(), "Cartões inválidos.");
-            Integer rb = parseNonNegative(redB.getText(), "Cartões inválidos.");
-            Integer pa = parseNonNegative(possessionA.getText(), "Percentagem inválida.");
-            if (ga == null || gb == null || ya == null || yb == null || ra == null || rb == null || pa == null) return;
+
+            Integer ya = parseNonNegative(amarelosA.getText(), "Cartões inválidos.");
+            Integer yb = parseNonNegative(amarelosB.getText(), "Cartões inválidos.");
+            Integer ra = parseNonNegative(vermelhosA.getText(), "Cartões inválidos.");
+            Integer rb = parseNonNegative(vermelhosB.getText(), "Cartões inválidos.");
+            Integer pa = parseNonNegative(posseA.getText(), "Percentagem inválida.");
+            Integer ga = parseNonNegative(golosA.getText(), "Golos inválidos.");
+            Integer gb = parseNonNegative(golosB.getText(), "Golos inválidos.");
+
+            if (ya == null || yb == null || ra == null || rb == null ||
+                    pa == null || ga == null || gb == null) return;
+
             if (pa > 100) {
                 error("A posse de bola tem de estar entre 0 e 100.");
                 return;
             }
-            g.goalsA = ga; g.goalsB = gb; g.yellowA = ya; g.yellowB = yb; g.redA = ra; g.redB = rb; g.possessionA = pa;
+
+            g.yellowA = ya;
+            g.yellowB = yb;
+            g.redA = ra;
+            g.redB = rb;
+            g.possessionA = pa;
+            g.goalsA = ga;
+            g.goalsB = gb;
+
             info("Dados editados com sucesso.");
             showGameDetails(g);
         });
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(form, BorderLayout.NORTH);
-        p.add(buttons, BorderLayout.SOUTH);
+
+        p.add(buttons, BorderLayout.NORTH);
+        p.add(center, BorderLayout.CENTER);
+
         setPage("Editar Dados Jogo", p);
     }
 
-    private void showTicketDetails(TicketBatch tb) {
-        JPanel p = new JPanel(new BorderLayout(12, 12));
-
-        JTextArea infoArea = new JTextArea();
-        infoArea.setEditable(false);
-        infoArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        infoArea.setText(
-                "Jogo: " + tb.game.teamA + " vs " + tb.game.teamB + "\n" +
-                        "Data/Hora: " + tb.game.dateTime + "\n" +
-                        "Estádio: " + tb.game.stadium.nome + "\n" +
-                        "Bancada: " + tb.stand.nome + "\n" +
-                        "Preço: " + money(tb.price) + "\n" +
-                        "Bilhetes disponíveis: " + tb.available + "\n" +
-                        "Bilhetes vendidos: " + tb.sold + "\n" +
-                        "Estado do jogo: " + tb.game.state + "\n"
-        );
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton back = btn("Voltar");
-        JButton buy = btn("Comprar Bilhete");
-        JButton edit = btn("Editar Bilhete");
-        JButton delete = btn("Eliminar Bilhete");
-
-        buttons.add(back);
-        buttons.add(buy);
-        buttons.add(edit);
-        buttons.add(delete);
-
-        back.addActionListener(e -> showTicketsPage());
-        buy.addActionListener(e -> buyTicket(tb));
-        edit.addActionListener(e -> showTicketForm(tb));
-        delete.addActionListener(e -> deleteTicket(tb));
-
-        p.add(buttons, BorderLayout.NORTH);
-        p.add(new JScrollPane(infoArea), BorderLayout.CENTER);
-
-        setPage("Bilhete", p);
+    private JTextField field(String value, int width) {
+        JTextField f = new JTextField(value);
+        f.setHorizontalAlignment(JTextField.CENTER);
+        f.setPreferredSize(new Dimension(width, 30));
+        f.setFont(new Font("Arial", Font.PLAIN, 14));
+        return f;
     }
 
-    private void showTicketsPage() {
-        JPanel p = new JPanel(new BorderLayout(12, 12));
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton create = btn("Criar Bilhetes");
-        JButton buy = btn("Comprar Bilhete");
-        JButton edit = btn("Editar Bilhete");
-        JButton delete = btn("Eliminar Bilhete");
-        top.add(create); top.add(buy); top.add(edit); top.add(delete);
-        DefaultTableModel model = tableModel("ID", "Jogo", "Data", "Estádio", "Bancada", "Preço", "Disponíveis", "Vendidos", "Fase");
-        for (TicketBatch t : store.tickets) {
-            model.addRow(new Object[]{t.id, t.game.teamA + " vs " + t.game.teamB, t.game.dateTime, t.game.stadium.nome, t.stand.nome, money(t.price), t.available, t.sold, t.game.phase});
-        }
-        JTable table = new JTable(model);
-        create.addActionListener(e -> showTicketForm(null));
-        buy.addActionListener(e -> {
-            TicketBatch tb = selectedTicket(table);
-            if (tb != null) showTicketDetails(tb);
+    private void addLinhaEditavel(
+            JPanel dados,
+            GridBagConstraints c,
+            int row,
+            JTextField leftField,
+            String label,
+            JTextField rightField
+    ) {
+        c.gridx = 0;
+        c.gridy = row;
+        dados.add(counterPanel(leftField), c);
+
+        c.gridx = 1;
+        c.gridwidth = 2;
+        dados.add(new JLabel(label, SwingConstants.CENTER), c);
+
+        c.gridx = 3;
+        c.gridwidth = 1;
+        dados.add(counterPanel(rightField), c);
+    }
+
+    private JPanel counterPanel(JTextField field) {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
+        p.setOpaque(false);
+
+        JButton minus = new JButton("-");
+        JButton plus = new JButton("+");
+
+        minus.setMargin(new Insets(1, 5, 1, 5));
+        plus.setMargin(new Insets(1, 5, 1, 5));
+
+        minus.addActionListener(e -> {
+            int value = parseCounter(field.getText());
+            if (value > 0) field.setText(String.valueOf(value - 1));
         });
 
-        edit.addActionListener(e -> {
-            TicketBatch tb = selectedTicket(table);
-            if (tb != null) showTicketDetails(tb);
+        plus.addActionListener(e -> {
+            int value = parseCounter(field.getText());
+            field.setText(String.valueOf(value + 1));
         });
 
-        delete.addActionListener(e -> {
-            TicketBatch tb = selectedTicket(table);
-            if (tb != null) showTicketDetails(tb);
-        });
-        table.addMouseListener(doubleClick(() -> {
-            TicketBatch tb = selectedTicket(table);
-            if (tb != null) showTicketDetails(tb);
-        }));
-        p.add(top, BorderLayout.NORTH);
-        p.add(store.tickets.isEmpty() ? empty("Não existem bilhetes criados.") : new JScrollPane(table), BorderLayout.CENTER);
-        setPage("Lista de Bilhetes", p);
+        p.add(minus);
+        p.add(field);
+        p.add(plus);
+
+        return p;
     }
 
-    private void showTicketForm(TicketBatch editing) {
-        boolean isEdit = editing != null;
-        JComboBox<Game> gameBox = new JComboBox<>();
-        for (Game g : store.games) gameBox.addItem(g);
-        JComboBox<Bancada> standBox = new JComboBox<>();
-        NumberFormat euroFormat = NumberFormat.getNumberInstance();
-        euroFormat.setMinimumFractionDigits(2);
-        euroFormat.setMaximumFractionDigits(2);
-
-        JFormattedTextField price = new JFormattedTextField(euroFormat);
-        price.setValue(isEdit ? editing.price : 0.00);
-        price.setHorizontalAlignment(JTextField.RIGHT);
-        price.setFocusLostBehavior(JFormattedTextField.COMMIT_OR_REVERT);
-        JTextField qty = new JTextField(isEdit ? String.valueOf(editing.available + editing.sold) : "");
-        qty.setEnabled(!isEdit);
-        if (isEdit) {
-            gameBox.addItem(editing.game);
-            gameBox.setSelectedItem(editing.game);
-            gameBox.setEnabled(false);
-            standBox.addItem(editing.stand);
-            standBox.setSelectedItem(editing.stand);
-            standBox.setEnabled(false);
-        } else {
-            refreshStandsCombo(gameBox, standBox);
-            gameBox.addActionListener(e -> refreshStandsCombo(gameBox, standBox));
+    private int parseCounter(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return 0;
         }
-        JPanel form = formPanel();
-        addRow(form, "Jogo *", gameBox, 0);
-        addRow(form, "Bancada *", standBox, 1);
-        JPanel pricePanel = new JPanel(new BorderLayout());
-        pricePanel.add(price, BorderLayout.CENTER);
-        pricePanel.add(new JLabel(" €"), BorderLayout.EAST);
-
-        addRow(form, "Preço *", pricePanel, 2);
-        addRow(form, "Quantidade *", qty, 3);
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancel = btn("Cancelar");
-        JButton save = btn("Confirmar");
-        buttons.add(cancel); buttons.add(save);
-        cancel.addActionListener(e -> showTicketsPage());
-        save.addActionListener(e -> {
-            if (blank(price) || (!isEdit && blank(qty))) {
-                error("Erro: campos obrigatórios em falta.");
-                return;
-            }
-            try {
-                price.commitEdit();
-            } catch (java.text.ParseException ex) {
-                error("O preço tem de ser numérico.");
-                return;
-            }
-
-            Double priceVal = ((Number) price.getValue()).doubleValue();
-            if (priceVal < 0) { error("O preço não pode ser negativo."); return; }
-            if (isEdit) {
-                if (editing.game.state == GameState.EM_CURSO || editing.game.state == GameState.CONCLUIDO) {
-                    error("O preço do bilhete só pode ser editado até ao início do jogo.");
-                    return;
-                }
-                editing.price = priceVal;
-                info("Preço editado com sucesso.");
-            } else {
-                Game game = (Game) gameBox.getSelectedItem();
-                Bancada stand = (Bancada) standBox.getSelectedItem();
-                if (game == null || stand == null) {
-                    error("Seleciona um jogo e uma bancada.");
-                    return;
-                }
-                Integer q = parseInt(qty.getText(), "A quantidade tem de ser um número inteiro.");
-                if (q == null) return;
-                if (q <= 0) { error("A quantidade deve ser positiva."); return; }
-                if (q > stand.capacidade) { error("A quantidade de bilhetes não pode ultrapassar a lotação máxima da bancada."); return; }
-                store.tickets.add(new TicketBatch(store.nextId(), game, stand, priceVal, q));
-                info("Bilhete criado com sucesso.");
-            }
-            showTicketsPage();
-        });
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(form, BorderLayout.NORTH);
-        p.add(buttons, BorderLayout.SOUTH);
-        setPage(isEdit ? "Editar Preço do Bilhete" : "Definir Bilhetes", p);
-    }
-
-    private void refreshStandsCombo(JComboBox<Game> gameBox, JComboBox<Bancada> standBox) {
-        standBox.removeAllItems();
-        Game g = (Game) gameBox.getSelectedItem();
-        if (g != null && g.stadium != null) {
-            for (Bancada st : g.stadium.bancadas) standBox.addItem(st);
-        }
-    }
-
-    private void buyTicket(TicketBatch tb) {
-        if (tb.available <= 0) {
-            error("Erro: bilhetes esgotados.");
-            return;
-        }
-        tb.available--;
-        tb.sold++;
-        store.soldTickets.add(new SoldTicket("BIL-" + store.nextId(), tb, tb.price));
-        info("Compra de bilhete realizada com sucesso.");
-        showTicketsPage();
-    }
-
-    private void deleteTicket(TicketBatch tb) {
-        if (tb.game.state == GameState.EM_CURSO || tb.game.state == GameState.CONCLUIDO) {
-            error("Não é permitido eliminar bilhetes após o início do jogo.");
-            return;
-        }
-        if (tb.sold > 0) {
-            error("Não é possível eliminar um bilhete com vendas associadas.");
-            return;
-        }
-        store.tickets.remove(tb);
-        info("Bilhete eliminado com sucesso.");
-        showTicketsPage();
-    }
-
-    private void showSponsorsPage() {
-        JPanel p = new JPanel(new BorderLayout(12, 12));
-
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton create = btn("Criar Patrocínio");
-        JButton edit = btn("Editar");
-        JButton delete = btn("Remover Patrocinador");
-
-        top.add(create);
-        top.add(edit);
-        top.add(delete);
-
-        DefaultTableModel model = tableModel("ID", "Nome", "Descrição", "Valor");
-        for (Patrocinio s : store.patrocinios) {
-            model.addRow(new Object[]{s.id, s.nome, s.descricao, money(s.valor)});
-        }
-
-        JTable table = new JTable(model);
-
-        create.addActionListener(e -> showSponsorForm(null));
-
-        edit.addActionListener(e -> {
-            Patrocinio s = selectedSponsor(table);
-            if (s != null) showSponsorForm(s);
-        });
-
-        delete.addActionListener(e -> {
-            Patrocinio s = selectedSponsor(table);
-            if (s != null) deleteSponsor(s);
-        });
-
-        table.addMouseListener(doubleClick(() -> {
-            Patrocinio s = selectedSponsor(table);
-            if (s != null) showSponsorDetails(s);
-        }));
-
-        p.add(top, BorderLayout.NORTH);
-        p.add(store.patrocinios.isEmpty()
-                ? empty("Não há patrocinadores registados.")
-                : new JScrollPane(table), BorderLayout.CENTER);
-
-        setPage("Patrocínios", p);
-    }
-
-    private void showSponsorDetails(Patrocinio sponsor) {
-        JPanel p = new JPanel(new BorderLayout(12, 12));
-
-        JTextArea infoArea = new JTextArea();
-        infoArea.setEditable(false);
-        infoArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        infoArea.setText(
-                "Nome: " + sponsor.nome + "\n" +
-                        "Descrição: " + sponsor.descricao + "\n" +
-                        "Valor: " + money(sponsor.valor) + "\n"
-        );
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton back = btn("Voltar");
-        JButton edit = btn("Editar");
-        JButton delete = btn("Remover Patrocinador");
-
-        buttons.add(back);
-        buttons.add(edit);
-        buttons.add(delete);
-
-        back.addActionListener(e -> showSponsorsPage());
-        edit.addActionListener(e -> showSponsorForm(sponsor));
-        delete.addActionListener(e -> deleteSponsor(sponsor));
-
-        p.add(buttons, BorderLayout.NORTH);
-        p.add(new JScrollPane(infoArea), BorderLayout.CENTER);
-
-        setPage("Patrocínios do Torneio", p);
-    }
-
-    private void showSponsorForm(Patrocinio editing) {
-        boolean isEdit = editing != null;
-
-        if (isTournamentStarted()) {
-            error(isEdit
-                    ? "Erro: Não é possível editar um patrocínio de um torneio já iniciado."
-                    : "Erro: Os patrocínios devem ser registados antes do início do jogo.");
-            return;
-        }
-
-        JTextField name = new JTextField(isEdit ? editing.nome : "");
-        JTextField description = new JTextField(isEdit ? editing.descricao : "");
-        NumberFormat euroFormat = NumberFormat.getNumberInstance();
-        euroFormat.setMinimumFractionDigits(2);
-        euroFormat.setMaximumFractionDigits(2);
-
-        JFormattedTextField value = new JFormattedTextField(euroFormat);
-        value.setValue(isEdit ? editing.valor : 0.00);
-        value.setHorizontalAlignment(JTextField.RIGHT);
-        value.setFocusLostBehavior(JFormattedTextField.COMMIT_OR_REVERT);
-
-        JPanel form = formPanel();
-        addRow(form, "Nome *", name, 0);
-        addRow(form, "Descrição *", description, 1);
-        JPanel valuePanel = new JPanel(new BorderLayout());
-        valuePanel.add(value, BorderLayout.CENTER);
-        valuePanel.add(new JLabel(" €"), BorderLayout.EAST);
-
-        addRow(form, "Valor *", valuePanel, 2);
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancel = btn("Cancelar");
-        JButton save = btn("Confirmar");
-
-        buttons.add(cancel);
-        buttons.add(save);
-
-        cancel.addActionListener(e -> showSponsorsPage());
-
-        save.addActionListener(e -> {
-            if (blank(name, description, value)) {
-                error("Erro: Campos obrigatórios em falta.");
-                return;
-            }
-
-            try {
-                value.commitEdit();
-            } catch (java.text.ParseException ex) {
-                error("O valor do patrocínio tem de ser numérico.");
-                return;
-            }
-
-            Double valueVal = ((Number) value.getValue()).doubleValue();
-            if (valueVal == null) return;
-
-            if (valueVal <= 0) {
-                error("O valor do patrocínio deve ser positivo.");
-                return;
-            }
-
-            if (isEdit) {
-                editing.nome = name.getText().trim();
-                editing.descricao = description.getText().trim();
-                editing.valor = valueVal;
-                info("Dados salvos com sucesso.");
-            } else {
-                store.patrocinios.add(new Patrocinio(
-                        store.nextId(),
-                        name.getText().trim(),
-                        description.getText().trim(),
-                        valueVal
-                ));
-                info("Patrocínio criado com sucesso.");
-            }
-
-            showSponsorsPage();
-        });
-
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(form, BorderLayout.NORTH);
-        p.add(buttons, BorderLayout.SOUTH);
-
-        setPage(isEdit ? "Editar Patrocínios" : "Criar Patrocínios", p);
-    }
-
-    private void deleteSponsor(Patrocinio sponsor) {
-        if (isTournamentStarted()) {
-            error("Erro: Não é possível eliminar um patrocínio associado a um torneio já iniciado.");
-            return;
-        }
-
-        int opt = JOptionPane.showConfirmDialog(
-                this,
-                "Eliminar o patrocínio " + sponsor.nome + "?",
-                "Confirmação",
-                JOptionPane.YES_NO_OPTION
-        );
-
-        if (opt == JOptionPane.YES_OPTION) {
-            store.patrocinios.remove(sponsor);
-            info("Patrocínio eliminado com sucesso.");
-            showSponsorsPage();
-        }
-    }
-
-    private Patrocinio selectedSponsor(JTable table) {
-        int id = selectedId(table);
-        return id < 0 ? null : store.findSponsor(id);
-    }
-
-    private boolean isTournamentStarted() {
-        return store.games.stream().anyMatch(g ->
-                g.state == GameState.EM_CURSO || g.state == GameState.CONCLUIDO
-        );
     }
 
     private void showStatsPage() {
@@ -1104,10 +844,9 @@ public class TorneioApp extends JFrame {
         catch (NumberFormatException e) { error(message); return null; }
     }
 
-    private String money(double value) {
+    public String money(double value) {
         return String.format("%.2f €", value);
     }
-
     public void info(String msg) { JOptionPane.showMessageDialog(this, msg, "Informação", JOptionPane.INFORMATION_MESSAGE); }
     public void error(String msg) { JOptionPane.showMessageDialog(this, msg, "Erro", JOptionPane.ERROR_MESSAGE); }
 
@@ -1158,7 +897,7 @@ public class TorneioApp extends JFrame {
     enum GameState { POR_AGENDAR, AGENDADO, EM_CURSO, CONCLUIDO, CANCELADO }
 
     static class Game {
-        int id, goalsA = 0, goalsB = 0, yellowA = 0, yellowB = 0, redA = 0, redB = 0, possessionA = 50;
+        int id, goalsA = 0, goalsB = 0, yellowA = 0, yellowB = 0, redA = 0, redB = 0, possessionA = 0;
         String phase, teamA, teamB, dateTime;
         Estadio stadium;
         GameState state = GameState.AGENDADO;

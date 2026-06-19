@@ -30,27 +30,57 @@ public class Calendario {
         JPanel p = new JPanel(new BorderLayout(12, 12));
 
         JPanel top = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 10));
+
         JButton groupPhase = criarBotaoFase("Fase de Grupos", true);
         JButton eliminationPhase = criarBotaoFase("Fase de eliminação", false);
+
         top.add(groupPhase);
         top.add(eliminationPhase);
 
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Grupo", "Equipa", "Pontos", "V", "E", "D"}, 0);
+        DefaultTableModel model =
+                new DefaultTableModel(
+                        new String[]{"Grupo", "Equipa", "Pontos", "V", "E", "D"}, 0);
+
         for (TorneioApp.Team t : store.teams) {
-            model.addRow(new Object[]{"A", t.name, 0, 0, 0, 0});
+            model.addRow(new Object[]{
+                    "A",
+                    t.name,
+                    0,
+                    0,
+                    0,
+                    0
+            });
         }
+
         JTable table = new JTable(model);
 
         eliminationPhase.addActionListener(e -> {
             try {
                 showFaseEliminacao(app, store);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(app, "Erro: Não foi possível carregar as informações do calendário.", "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(
+                        app,
+                        "Erro: Não foi possível carregar as informações do calendário.",
+                        "Erro",
+                        JOptionPane.ERROR_MESSAGE
+                );
             }
         });
 
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
+
+        JButton generate = new JButton("Gerar Calendário");
+
+        generate.addActionListener(e -> {
+            app.generateCalendar();
+        });
+
+        bottom.add(generate);
+
         p.add(top, BorderLayout.NORTH);
         p.add(new JScrollPane(table), BorderLayout.CENTER);
+        p.add(bottom, BorderLayout.SOUTH);
+
         app.setPage("Calendário", p);
     }
 
@@ -94,7 +124,7 @@ public class Calendario {
 
         for(int i = 0; i < 4; i++) {
             TorneioApp.Game g = (i < quartos.size()) ? quartos.get(i) : null;
-            colQuartos.add(criarCartaoJogo(store, g));
+            colQuartos.add(criarCartaoJogo(app, store, g));
         }
 
         // Coluna 2: Semifinais
@@ -106,9 +136,9 @@ public class Calendario {
         colSemis.add(lblSemis);
 
         colSemis.add(new JLabel()); // Espaçador
-        colSemis.add(criarCartaoJogo(store, semis.size() > 0 ? semis.get(0) : null));
+        colSemis.add(criarCartaoJogo(app, store, semis.size() > 0 ? semis.get(0) : null));
         colSemis.add(new JLabel()); // Espaçador
-        colSemis.add(criarCartaoJogo(store, semis.size() > 1 ? semis.get(1) : null));
+        colSemis.add(criarCartaoJogo(app, store, semis.size() > 1 ? semis.get(1) : null));
 
         chavesPanel.add(colQuartos);
         chavesPanel.add(colSemis);
@@ -132,7 +162,7 @@ public class Calendario {
         return btn;
     }
 
-    private static JPanel criarCartaoJogo(Store store, TorneioApp.Game g) {
+    private static JPanel criarCartaoJogo(TorneioApp app, Store store, TorneioApp.Game g) {
         JPanel cartao = new JPanel(new GridLayout(4, 1, 0, 2));
         cartao.setBackground(Color.GRAY);
         cartao.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -174,6 +204,17 @@ public class Calendario {
         cartao.add(linha2);
         cartao.add(linha3);
         cartao.add(linha4);
+
+        if (g != null) {
+            cartao.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+            cartao.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                    app.showGameDetails(g);
+                }
+            });
+        }
 
         return cartao;
     }

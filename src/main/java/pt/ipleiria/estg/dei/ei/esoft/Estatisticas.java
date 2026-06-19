@@ -8,24 +8,55 @@ public class Estatisticas {
         JPanel p = new JPanel(new BorderLayout(12, 12));
 
         DefaultTableModel model = new DefaultTableModel(
-                new String[]{"Nº", "Jogador", "Golos Marcados", "Cartões Amarelos", "Cartões Vermelhos"}, 0
-        );
+                new String[]{"Nº", "Jogador", "GM", "CA", "CV"}, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
-        int index = 1;
+        int numero = 1;
+
         for (TorneioApp.Team team : store.teams) {
             for (TorneioApp.Player player : team.players) {
-                model.addRow(new Object[]{index++, player.name, 0, 0, 0});
+                model.addRow(new Object[]{
+                        numero++,
+                        player.name,
+                        0,
+                        0,
+                        0
+                });
             }
         }
 
-        if (index == 1) {
-            JLabel empty = new JLabel("Ainda não existem dados estatísticos registados para este torneio.", SwingConstants.CENTER);
-            empty.setFont(new Font("Arial", Font.PLAIN, 18));
-            p.add(empty, BorderLayout.CENTER);
+        if (numero == 1) {
+            p.add(empty("Ainda não existem dados estatísticos registados para este torneio."), BorderLayout.CENTER);
         } else {
-            p.add(new JScrollPane(new JTable(model)), BorderLayout.CENTER);
+            JTable table = new JTable(model);
+            table.setRowHeight(28);
+            table.setFont(new Font("Arial", Font.PLAIN, 14));
+            table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+
+            JPanel tabelaPanel = new JPanel(new BorderLayout());
+            tabelaPanel.setBackground(new Color(220, 220, 220));
+            tabelaPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+            tabelaPanel.setPreferredSize(new Dimension(520, 230));
+
+            tabelaPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+            JPanel center = new JPanel(new GridBagLayout());
+            center.add(tabelaPanel);
+
+            p.add(center, BorderLayout.CENTER);
         }
 
-        app.setPage("Estatísticas", p);
+        app.setPage("Estatísticas gerais", p);
+    }
+
+    private static JLabel empty(String text) {
+        JLabel l = new JLabel(text, SwingConstants.CENTER);
+        l.setFont(new Font("Arial", Font.PLAIN, 18));
+        return l;
     }
 }
