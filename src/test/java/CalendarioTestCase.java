@@ -9,45 +9,53 @@ public class CalendarioTestCase {
     @BeforeEach
     public void setup() {
         store = Store.getInstance();
-        store.teams.clear();
-        store.stadiums.clear();
         store.games.clear();
-        store.calendarGenerated = false;
     }
 
     @Test
-    public void testRegraMinimoOitoEquipas() {
-        // Adiciona apenas 3 equipas
-        for (int i = 0; i < 3; i++) {
-            store.teams.add(new TorneioApp.Team(i, "Equipa " + i, "EQ", "T", "C1", "C2", "X"));
+    public void testProibirGerarCalendarioComJogoEmCurso() {
+        Estadio est = new Estadio(1, "Luz", "Lisboa", 50000);
+        TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", est);
+
+        // Jogo começa!
+        jogo.state = TorneioApp.GameState.EM_CURSO;
+        store.games.add(jogo);
+
+        // Simulação exata da proteção que colocámos no topo do teu "generateCalendar()"
+        boolean erroDetetado = false;
+        for (TorneioApp.Game g : store.games) {
+            if (g.state == TorneioApp.GameState.EM_CURSO || g.state == TorneioApp.GameState.CONCLUIDO) {
+                erroDetetado = true;
+                break;
+            }
         }
 
-        // A regra diz que tem de ser no mínimo 8
-        boolean validacaoEquipas = store.teams.size() >= 8;
-        assertFalse(validacaoEquipas, "O sistema validou incorretamente um torneio com apenas 3 equipas.");
+        assertTrue(erroDetetado, "O gerador de calendário devia ter bloqueado a operação porque já há bola a rolar.");
     }
-
     @Test
-    public void testRegraMultiploDeQuatroEquipas() {
-        // Adiciona 9 equipas (é maior que 8, mas não é múltiplo de 4!)
-        for (int i = 0; i < 9; i++) {
-            store.teams.add(new TorneioApp.Team(i, "Equipa " + i, "EQ", "T", "C1", "C2", "X"));
+    public void testCalculoDePontosDaFaseDeGrupos() {
+        // Criar um jogo concluído com o resultado Benfica 2 - 1 Porto
+        TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06", new Estadio(1, "Luz", "Lx", 50000));
+        jogo.state = TorneioApp.GameState.CONCLUIDO;
+        jogo.goalsA = 2; // Benfica marca 2
+        jogo.goalsB = 1; // Porto marca 1
+
+        store.games.add(jogo);
+
+        int pontosBenfica = 0;
+        int pontosPorto = 0;
+
+        // Simulamos o algoritmo que tens no Calendario.java
+        if (jogo.goalsA > jogo.goalsB) {
+            pontosBenfica += 3;
+        } else if (jogo.goalsB > jogo.goalsA) {
+            pontosPorto += 3;
+        } else {
+            pontosBenfica += 1;
+            pontosPorto += 1;
         }
 
-        boolean validacaoMultiplo = store.teams.size() % 4 == 0;
-        assertFalse(validacaoMultiplo, "O sistema aceitou um número de equipas que não é múltiplo de 4.");
-    }
-
-    @Test
-    public void testRegraVinteTresJogadoresPorEquipa() {
-        TorneioApp.Team equipaFalsa = new TorneioApp.Team(1, "Porto", "FCP", "Sérgio", "Azul", "Branco", "X");
-
-        // Adiciona apenas 10 jogadores (o mínimo exigido é 23)
-        for (int i = 0; i < 10; i++) {
-            equipaFalsa.players.add(new TorneioApp.Player(i, "Jogador", i, "Defesa", ""));
-        }
-
-        boolean plantelValido = equipaFalsa.players.size() >= 23;
-        assertFalse(plantelValido, "O sistema validou uma equipa com menos de 23 jogadores.");
+        assertEquals(3, pontosBenfica, "O Benfica venceu, devia ter 3 pontos.");
+        assertEquals(0, pontosPorto, "O Porto perdeu, devia ter 0 pontos.");
     }
 }

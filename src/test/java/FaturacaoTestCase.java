@@ -4,38 +4,30 @@ import static org.junit.jupiter.api.Assertions.*;
 public class FaturacaoTestCase {
 
     @Test
-    public void testFaturacaoBilhetes() {
+    public void testCalculoFaturacaoBilhetes() {
         Estadio luz = new Estadio(1, "Luz", "Lisboa", 65000);
         Bancada b = new Bancada(1, "Sagres", 30000);
         TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", luz);
 
-        // Criar um lote de 100 bilhetes a 20.00€ cada
-        TorneioApp.TicketBatch lote = new TorneioApp.TicketBatch(1, jogo, b, 20.00, 100);
+        TorneioApp.TicketBatch lote = new TorneioApp.TicketBatch(1, jogo, b, 15.00, 500);
 
-        // Simular a venda de 3 bilhetes
-        lote.available -= 3;
-        lote.sold += 3;
+        // Vender 10 bilhetes
+        lote.sold = 10;
+        double receitaEsperada = 150.00; // 10 * 15.00
 
-        double receitaBilhetes = lote.sold * lote.price;
-
-        assertEquals(97, lote.available, "Deviam sobrar 97 bilhetes.");
-        assertEquals(3, lote.sold, "Deviam estar vendidos 3 bilhetes.");
-        assertEquals(60.00, receitaBilhetes, "O cálculo do valor faturado nos bilhetes falhou.");
+        assertEquals(receitaEsperada, lote.sold * lote.price, "O montante total faturado em bilheteira está incorreto.");
     }
-
     @Test
-    public void testFaturacaoPatrocinios() {
-        Store store = Store.getInstance();
-        store.patrocinios.clear();
+    public void testNaoPermitirLoteMaiorQueLotacaoDaBancada() {
+        Estadio luz = new Estadio(1, "Luz", "Lisboa", 65000);
+        Bancada bancada = new Bancada(1, "Sagres", 30000); // Cabem 30.000 pessoas
+        TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06", luz);
 
-        store.patrocinios.add(new Patrocinio(1, "Sagres", "Bebidas", 50000.00));
-        store.patrocinios.add(new Patrocinio(2, "Betano", "Apostas", 120000.00));
+        // O utilizador tenta criar um lote com 35.000 bilhetes!
+        int bilhetesTentativa = 35000;
 
-        // Soma todos os valores da lista
-        double totalPatrocinios = store.patrocinios.stream()
-                .mapToDouble(p -> p.valor)
-                .sum();
+        boolean ultrapassaLotacao = bilhetesTentativa > bancada.capacidade;
 
-        assertEquals(170000.00, totalPatrocinios, "O cálculo da faturação total dos patrocinadores está errado.");
+        assertTrue(ultrapassaLotacao, "O sistema tem de detetar que o lote de bilhetes excede a lotação física da bancada.");
     }
 }

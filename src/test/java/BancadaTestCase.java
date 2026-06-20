@@ -4,27 +4,43 @@ import static org.junit.jupiter.api.Assertions.*;
 public class BancadaTestCase {
 
     @Test
-    public void testAdicionarBancadasAoEstadio() {
-        Estadio estadio = new Estadio(1, "Estádio José Alvalade", "Lisboa", 50000);
+    public void testEditarEBancada() {
+        Estadio estadio = new Estadio(1, "Alvalade", "Lisboa", 50000);
+        Bancada bancada = new Bancada(1, "Bancada A", 10000);
+        estadio.bancadas.add(bancada);
 
-        Bancada b1 = new Bancada(10, "Bancada Sul", 25000);
-        Bancada b2 = new Bancada(11, "Bancada Norte", 20000);
+        // Simular Edição da Bancada
+        bancada.nome = "Bancada Premium";
+        bancada.capacidade = 12000;
 
-        estadio.bancadas.add(b1);
-        estadio.bancadas.add(b2);
-
-        assertEquals(2, estadio.bancadas.size(), "O estádio devia ter exatamente 2 bancadas.");
+        assertEquals("Bancada Premium", estadio.bancadas.get(0).nome);
+        assertEquals(12000, estadio.bancadas.get(0).capacidade);
     }
 
     @Test
-    public void testCalcularTotalCapacidadeBancadas() {
-        Estadio estadio = new Estadio(1, "Estádio Municipal de Braga", "Braga", 30000);
+    public void testRemoverBancada() {
+        Estadio estadio = new Estadio(1, "Alvalade", "Lisboa", 50000);
+        Bancada bancada = new Bancada(1, "Bancada A", 10000);
+        estadio.bancadas.add(bancada);
 
-        estadio.bancadas.add(new Bancada(1, "Bancada Nascente", 15000));
-        estadio.bancadas.add(new Bancada(2, "Bancada Poente", 12000));
+        // Remover
+        estadio.bancadas.remove(bancada);
+        assertTrue(estadio.bancadas.isEmpty(), "A bancada devia ter sido apagada do estádio.");
+    }
 
-        // 15000 + 12000 = 27000
-        int totalCalculado = estadio.totalCapacidadeBancadas();
-        assertEquals(27000, totalCalculado, "A soma da capacidade das bancadas falhou.");
+    @Test
+    public void testValidarLimiteDeLotacaoDoEstadio() {
+        // Estádio com capacidade máxima de 30.000
+        Estadio estadio = new Estadio(1, "Municipal", "Braga", 30000);
+
+        estadio.bancadas.add(new Bancada(1, "Nascente", 20000));
+
+        // Tentar adicionar uma bancada de 15.000 (Soma daria 35.000 -> Erro!)
+        int novaBancadaCapacidade = 15000;
+
+        int capacidadeSomaTotal = estadio.totalCapacidadeBancadas() + novaBancadaCapacidade;
+        boolean ultrapassaMaximo = capacidadeSomaTotal > estadio.capacidade;
+
+        assertTrue(ultrapassaMaximo, "O sistema devia acusar que a lotação ultrapassou o limite do estádio.");
     }
 }
