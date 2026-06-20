@@ -23,7 +23,14 @@ public class EstadioPainelControlador {
 
         JTable table = new JTable(model);
 
-        create.addActionListener(e -> showStadiumForm(app, store, null));
+        // BLOQUEIO: Impedir a criação de estádios se o torneio já começou
+        create.addActionListener(e -> {
+            if (isTournamentStarted(store)) {
+                app.error("Não podes criar um estádio depois do torneio ter começado!");
+            } else {
+                showStadiumForm(app, store, null);
+            }
+        });
 
         view.addActionListener(ev -> {
             Estadio est = selectedStadium(app, table, store);
@@ -90,17 +97,19 @@ public class EstadioPainelControlador {
             }
         });
 
+        // BLOQUEIO: Impedir a adição de bancadas
         addStand.addActionListener(e -> {
             if (isTournamentStarted(store)) {
-                app.error("Uma bancada só pode ser inserida antes de começar o torneio!");
+                app.error("Não podes adicionar bancadas depois do torneio ter começado!");
             } else {
                 showStandForm(app, store, estadio, null);
             }
         });
 
+        // BLOQUEIO: Impedir a edição do estádio
         edit.addActionListener(e -> {
             if (isTournamentStarted(store)) {
-                app.error("Os estádios só podem ser editados antes de começar o torneio!");
+                app.error("Não podes editar o estádio depois do torneio ter começado!");
             } else {
                 showStadiumForm(app, store, estadio);
             }
@@ -177,8 +186,9 @@ public class EstadioPainelControlador {
     }
 
     private static void deleteStadium(TorneioApp app, Store store, Estadio estadio) {
+        // BLOQUEIO: Impedir a eliminação do estádio
         if (isTournamentStarted(store)) {
-            app.error("Um estádio só pode ser eliminado antes de começar o torneio!");
+            app.error("Não podes eliminar um estádio depois do torneio ter começado!");
             return;
         }
 
@@ -206,17 +216,19 @@ public class EstadioPainelControlador {
 
         back.addActionListener(e -> showStadiumDetails(app, store, estadio));
 
+        // BLOQUEIO: Impedir a edição da bancada
         edit.addActionListener(e -> {
             if (isTournamentStarted(store)) {
-                app.error("Uma bancada só pode ser editada antes de começar o torneio!");
+                app.error("Não podes editar uma bancada depois do torneio ter começado!");
             } else {
                 showStandForm(app, store, estadio, bancada);
             }
         });
 
+        // BLOQUEIO: Impedir a eliminação da bancada
         delete.addActionListener(e -> {
             if (isTournamentStarted(store)) {
-                app.error("Uma bancada só pode ser eliminada antes de começar o torneio!");
+                app.error("Não podes eliminar uma bancada depois do torneio ter começado!");
                 return;
             }
             estadio.bancadas.remove(bancada);
