@@ -254,88 +254,112 @@ public class TorneioApp extends JFrame {
     }
 
     public void generateCalendar() {
-        if (store.tournament == null) {
-            error(
-                    "É necessário criar um torneio antes de gerar o calendário."
-            );
+        if (store.teams.size() < 8) {
+            error("Erro: O torneio tem de ter no mínimo 8 equipas.");
             return;
         }
-
-        if (
-                store.tournament.startDate.compareTo(
-                        store.tournament.endDate
-                ) > 0
-        ) {
-            error(
-                    "Não é possível gerar um calendário com as datas fornecidas."
-            );
+        if (store.teams.size() % 4 != 0) {
+            error("Erro: O número de equipas (" + store.teams.size() + ") tem de ser múltiplo de 4.");
             return;
         }
-
+        for (Team t : store.teams) {
+            if (t.players.size() < 23) {
+                error("Erro: A equipa " + t.name + " tem apenas " + t.players.size() + " jogadores. São necessários pelo menos 23.");
+                return;
+            }
+        }
         if (store.stadiums.isEmpty()) {
-            error(
-                    "É necessário criar pelo menos um estádio antes de gerar o calendário."
-            );
+            error("Erro: Não existem estádios criados para agendar os jogos.");
             return;
         }
 
-        boolean existemJogosIniciados =
-                store.games.stream().anyMatch(game ->
-                        game.state == GameState.CONCLUIDO ||
-                                game.state == GameState.EM_CURSO
-                );
-
-        if (existemJogosIniciados) {
-            error(
-                    "Não é possível gerar o calendário depois de já terem ocorrido jogos."
-            );
-            return;
-        }
-
+        // Limpa completamente os jogos anteriores para gerar um calendário do zero
         store.games.clear();
 
-        Estadio stadium = store.stadiums.get(0);
+        int numGrupos = store.teams.size() / 4;
+        java.util.Random rand = new java.util.Random();
 
-        Game firstGame = new Game(
-                store.nextId(),
-                "Fase de Grupos",
-                "Equipa A",
-                "Equipa B",
-                store.tournament.startDate + " 18:00",
-                stadium
-        );
+        int restDays = (store.tournament != null) ? store.tournament.restDays : 2;
+        int gapEntreRondas = restDays + 1;
 
-        Game secondGame = new Game(
-                store.nextId(),
-                "Fase de Grupos",
-                "Equipa C",
-                "Equipa D",
-                addDays(
-                        store.tournament.startDate,
-                        store.tournament.restDays
-                ) + " 18:00",
-                stadium
-        );
+        // 1. SORTEIO DAS EQUIPAS: Baralha uma cópia das equipas para criar grupos e jogos totalmente novos a cada clique!
+        java.util.List<Team> equipasSorteadas = new java.util.ArrayList<>(store.teams);
+        java.util.Collections.shuffle(equipasSorteadas, rand);
 
-        Game finalGame = new Game(
-                store.nextId(),
-                "Final",
-                "Por definir",
-                "Por definir",
-                store.tournament.endDate + " 20:00",
-                stadium
-        );
+        // Controlo de estádios: garante no máximo 1 jogo por dia no mesmo estádio
+        java.util.Map<String, java.util.List<Estadio>> estadiosLivresPorDia = new java.util.HashMap<>();
 
-        store.games.add(firstGame);
-        store.games.add(secondGame);
-        store.games.add(finalGame);
+        for (int i = 0; i < numGrupos; i++) {
+            int startIndex = i * 4;
+            // Divide as equipas baralhadas pelos grupos dinamicamente
+            java.util.List<Team> grupo = equipasSorteadas.subList(startIndex, startIndex + 4);
+
+            int[][] confrontos = {
+                    {0, 1, 2, 3}, // Ronda 1
+                    {0, 2, 1, 3}, // Ronda 2
+                    {0, 3, 1, 2}  // Ronda 3
+            };
+
+            // Mantém os grupos ligeiramente desfasados para o fluxo de estádios por dia bater certo
+            int grupoOffsetDias = i * 1;
+
+            for (int ronda = 0; ronda < 3; ronda++) {
+                int diasAcumulados = grupoOffsetDias + (ronda * gapEntreRondas);
+                String dataBase = addDays(store.tournament.startDate, diasAcumulados);
+
+                estadiosLivresPorDia.putIfAbsent(dataBase, new java.util.ArrayList<>(store.stadiums));
+                java.util.List<Estadio> livresHoje = estadiosLivresPorDia.get(dataBase);
+
+                if (livresHoje.isEmpty()) {
+                    error("Erro de Logística: Demasiados jogos para o dia " + dataBase + " e não há estádios suficientes (máx 1 jogo/dia por estádio).");
+                    return;
+                }
+
+                Team t1 = grupo.get(confrontos[ronda][0]);
+                Team t2 = grupo.get(confrontos[ronda][1]);
+                Team t3 = grupo.get(confrontos[ronda][2]);
+                Team t4 = grupo.get(confrontos[ronda][3]);
+
+                // 2. HORÁRIOS DINÂMICOS: Define horas variadas de forma aleatória para cada partida
+                String hora1 = "18:00";
+                String hora2 = "20:30";
+
+                // Exemplo do Clássico: Se for Benfica vs Porto, força a sugestão das 16:00
+                if ((t1.name.equals("Benfica") && t2.name.equals("Porto")) || (t1.name.equals("Porto") && t2.name.equals("Benfica"))) {
+                    hora1 = "16:00";
+                } else if ((t3.name.equals("Benfica") && t4.name.equals("Porto")) || (t3.name.equals("Porto") && t4.name.equals("Benfica"))) {
+                    hora2 = "16:00";
+                } else {
+                    // Caso não seja o clássico, sorteia horários diferentes para os dois jogos do dia
+                    String[] horariosPossiveis = {"16:00", "18:00", "20:30"};
+                    hora1 = horariosPossiveis[rand.nextInt(3)];
+                    hora2 = horariosPossiveis[rand.nextInt(3)];
+                    while (hora1.equals(hora2)) {
+                        hora2 = horariosPossiveis[rand.nextInt(3)];
+                    }
+                }
+
+                // --- AGENDAR JOGO 1 ---
+                Estadio est1 = livresHoje.remove(rand.nextInt(livresHoje.size()));
+                Game jogo1 = new Game(store.nextId(), "Fase de Grupos", t1.name, t2.name, dataBase + " " + hora1, est1);
+                store.games.add(jogo1);
+
+                // --- AGENDAR JOGO 2 ---
+                if (livresHoje.isEmpty()) {
+                    error("Erro de Logística: Demasiados jogos para o dia " + dataBase + " e não há estádios suficientes.");
+                    return;
+                }
+                Estadio est2 = livresHoje.remove(rand.nextInt(livresHoje.size()));
+                Game jogo2 = new Game(store.nextId(), "Fase de Grupos", t3.name, t4.name, dataBase + " " + hora2, est2);
+                store.games.add(jogo2);
+            }
+        }
 
         store.calendarGenerated = true;
-        store.tournament.state = "em curso";
+        info("Novo Calendário sorteado com sucesso! Grupos reestruturados, novas datas, horários e estádios distribuídos.");
 
-        info("Calendário gerado com sucesso.");
-
-        showCalendarPage();
+        // Força a atualização do ecrã com a revolução total dos novos dados
+        Calendario.showCalendario(this, store);
     }
 
     private String addDays(String date, int days) {

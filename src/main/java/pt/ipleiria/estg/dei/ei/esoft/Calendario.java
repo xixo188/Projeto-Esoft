@@ -37,48 +37,155 @@ public class Calendario {
         top.add(groupPhase);
         top.add(eliminationPhase);
 
-        DefaultTableModel model =
-                new DefaultTableModel(
-                        new String[]{"Grupo", "Equipa", "Pontos", "V", "E", "D"}, 0);
-
-        for (TorneioApp.Team t : store.teams) {
-            model.addRow(new Object[]{
-                    "A",
-                    t.name,
-                    0,
-                    0,
-                    0,
-                    0
-            });
-        }
-
-        JTable table = new JTable(model);
-
         eliminationPhase.addActionListener(e -> {
             try {
                 showFaseEliminacao(app, store);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(
-                        app,
-                        "Erro: Não foi possível carregar as informações do calendário.",
-                        "Erro",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(app, "Erro: Não foi possível carregar as informações do calendário.", "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        // --- TABELAS DE CLASSIFICAÇÃO DOS GRUPOS ---
+        int numGrupos = (int) Math.ceil((double) store.teams.size() / 4);
+        JPanel tabelasPanel = new JPanel(new GridLayout(0, 2, 10, 10));
+        tabelasPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JButton generate = new JButton("Gerar Calendário");
+        for (int i = 0; i < numGrupos; i++) {
+            String nomeGrupo = "Grupo " + (char) ('A' + i);
+            DefaultTableModel model = new DefaultTableModel(new String[]{"Equipa", "Pts", "V", "E", "D"}, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) { return false; }
+            };
 
-        generate.addActionListener(e -> {
-            app.generateCalendar();
+            int startIndex = i * 4;
+            int endIndex = Math.min(startIndex + 4, store.teams.size());
+            for (int j = startIndex; j < endIndex; j++) {
+                model.addRow(new Object[]{store.teams.get(j).name, 0, 0, 0, 0});
+            }
+
+            JTable table = new JTable(model);
+            table.setPreferredScrollableViewportSize(new Dimension(450, table.getRowHeight() * 4));
+
+            JPanel grupoContainer = new JPanel(new BorderLayout());
+            JLabel tituloGrupo = new JLabel(nomeGrupo, SwingConstants.CENTER);
+            tituloGrupo.setFont(new Font("Arial", Font.BOLD, 16));
+            tituloGrupo.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+
+            grupoContainer.add(tituloGrupo, BorderLayout.NORTH);
+            JPanel wrapTable = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            wrapTable.add(new JScrollPane(table));
+            grupoContainer.add(wrapTable, BorderLayout.CENTER);
+
+            tabelasPanel.add(grupoContainer);
+        }
+
+        // --- LISTA DE JOGOS AGENDADOS ---
+        DefaultTableModel jogosModel = new DefaultTableModel(new String[]{"Data ✏️", "Equipa 1", "Equipa 2", "Estádio", "Ação"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+
+        List<TorneioApp.Game> faseGruposJogos = store.games.stream()
+                .filter(g -> g.phase.equals("Fase de Grupos"))
+                .collect(Collectors.toList());
+
+        for (TorneioApp.Game g : faseGruposJogos) {
+            String textoAcao = "Finalizado";
+            if (g.state == TorneioApp.GameState.AGENDADO) textoAcao = "Começar Jogo";
+            else if (g.state == TorneioApp.GameState.EM_CURSO) textoAcao = "Gerir Jogo";
+
+            jogosModel.addRow(new Object[]{g.dateTime, g.teamA, g.teamB, g.stadium.nome, textoAcao});
+        }
+
+        JTable tabelaJogos = new JTable(jogosModel);
+        tabelaJogos.setRowHeight(32);
+
+        // Renderizador azul para destacar que a Data é editável
+        tabelaJogos.getColumnModel().getColumn(0).setCellRenderer((table, value, isSelected, hasFocus, row, column) -> {
+            JLabel lbl = new JLabel(value != null ? value.toString() : "");
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            lbl.setForeground(new Color(0, 102, 204));
+            return lbl;
         });
 
+        // Renderizador dos Botões de Ação
+        tabelaJogos.getColumnModel().getColumn(4).setCellRenderer((table, value, isSelected, hasFocus, row, column) -> {
+            JButton btn = new JButton(value != null ? value.toString() : "");
+            btn.setFocusPainted(false);
+            if ("Começar Jogo".equals(value)) {
+                btn.setBackground(new Color(64, 107, 109));
+                btn.setForeground(Color.WHITE);
+            } else if ("Gerir Jogo".equals(value)) {
+                btn.setBackground(new Color(220, 150, 40));
+                btn.setForeground(Color.WHITE);
+            } else {
+                btn.setBackground(Color.LIGHT_GRAY);
+                btn.setForeground(Color.DARK_GRAY);
+            }
+            return btn;
+        });
+
+        // CORREÇÃO BULLETPROOF: Uso de getSelectedRow e getSelectedColumn para precisão total no clique
+        tabelaJogos.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                int row = tabelaJogos.getSelectedRow();
+                int col = tabelaJogos.getSelectedColumn();
+
+                if (row >= 0 && row < faseGruposJogos.size()) {
+                    TorneioApp.Game g = faseGruposJogos.get(row);
+
+                    // Clique na Coluna Data (0)
+                    if (col == 0) {
+                        if (g.state == TorneioApp.GameState.AGENDADO) {
+                            String novaData = JOptionPane.showInputDialog(app, "Nova Data/Hora do jogo:", g.dateTime);
+                            if (novaData != null && !novaData.trim().isEmpty()) {
+                                g.dateTime = novaData.trim();
+                                jogosModel.setValueAt(g.dateTime, row, 0); // Altera visualmente o modelo na hora
+                                showFaseGrupos(app, store); // Atualiza o ecrã completo
+                            }
+                        } else {
+                            app.error("Não podes alterar a data de um jogo que já começou ou já terminou.");
+                        }
+                    }
+
+                    // Clique na Coluna Ação (4)
+                    if (col == 4) {
+                        if (g.state == TorneioApp.GameState.AGENDADO) {
+                            int opt = JOptionPane.showConfirmDialog(app, "Dar o apito inicial para o jogo " + g.teamA + " vs " + g.teamB + "?", "Começar Jogo", JOptionPane.YES_NO_OPTION);
+                            if (opt == JOptionPane.YES_OPTION) {
+                                g.state = TorneioApp.GameState.EM_CURSO;
+                                app.info("O jogo começou! Clica em 'Gerir Jogo' para registar golos e cartões.");
+                                showFaseGrupos(app, store);
+                            }
+                        } else if (g.state == TorneioApp.GameState.EM_CURSO) {
+                            app.showGameDetails(g); // Só permite abrir se estiver em Curso!
+                        } else {
+                            app.info("Este jogo já se encontra finalizado.");
+                        }
+                    }
+                }
+            }
+        });
+
+        JPanel painelJogos = new JPanel(new BorderLayout());
+        painelJogos.setBorder(BorderFactory.createTitledBorder(BorderFactory.createTitledBorder(""), "Jogos Agendados", 0, 0, new Font("Arial", Font.BOLD, 14)));
+        painelJogos.add(new JScrollPane(tabelaJogos), BorderLayout.CENTER);
+        painelJogos.setPreferredSize(new Dimension(800, 250));
+
+        JPanel centroPanel = new JPanel(new BorderLayout(0, 10));
+        centroPanel.add(tabelasPanel, BorderLayout.NORTH);
+        if (!store.games.isEmpty()) {
+            centroPanel.add(painelJogos, BorderLayout.CENTER);
+        }
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton generate = new JButton("Gerar Calendário");
+        generate.addActionListener(e -> app.generateCalendar());
         bottom.add(generate);
 
         p.add(top, BorderLayout.NORTH);
-        p.add(new JScrollPane(table), BorderLayout.CENTER);
+        p.add(centroPanel, BorderLayout.CENTER);
         p.add(bottom, BorderLayout.SOUTH);
 
         app.setPage("Calendário", p);
@@ -101,11 +208,9 @@ public class Calendario {
             }
         });
 
-        // Painel Principal das Chaves
         JPanel chavesPanel = new JPanel(new GridLayout(1, 2, 40, 0));
         chavesPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Filtrar jogos por fase
         List<TorneioApp.Game> quartos = store.games.stream()
                 .filter(g -> g.phase.equals("Quartos de Final"))
                 .collect(Collectors.toList());
@@ -114,7 +219,6 @@ public class Calendario {
                 .filter(g -> g.phase.equals("Semifinais"))
                 .collect(Collectors.toList());
 
-        // Coluna 1: Quartos de Final
         JPanel colQuartos = new JPanel(new GridLayout(5, 1, 0, 15));
         JLabel lblQuartos = new JLabel("Quartas de final", SwingConstants.CENTER);
         lblQuartos.setOpaque(true);
@@ -127,7 +231,6 @@ public class Calendario {
             colQuartos.add(criarCartaoJogo(app, store, g));
         }
 
-        // Coluna 2: Semifinais
         JPanel colSemis = new JPanel(new GridLayout(5, 1, 0, 15));
         JLabel lblSemis = new JLabel("Semifinais", SwingConstants.CENTER);
         lblSemis.setOpaque(true);
@@ -195,12 +298,23 @@ public class Calendario {
         cartao.add(linha3);
         cartao.add(linha4);
 
-        if (g != null) {
+        if (g != null && !g.teamA.equals("A determinar")) {
             cartao.setCursor(new Cursor(Cursor.HAND_CURSOR));
             cartao.addMouseListener(new java.awt.event.MouseAdapter() {
                 @Override
                 public void mouseClicked(java.awt.event.MouseEvent e) {
-                    app.showGameDetails(g);
+                    if (g.state == TorneioApp.GameState.AGENDADO) {
+                        int opt = JOptionPane.showConfirmDialog(app, "Deseja dar o apito inicial para este jogo?", "Começar Jogo", JOptionPane.YES_NO_OPTION);
+                        if (opt == JOptionPane.YES_OPTION) {
+                            g.state = TorneioApp.GameState.EM_CURSO;
+                            app.info("Jogo iniciado!");
+                            showFaseEliminacao(app, store);
+                        }
+                    } else if (g.state == TorneioApp.GameState.EM_CURSO) {
+                        app.showGameDetails(g);
+                    } else {
+                        app.info("Este jogo já terminou.");
+                    }
                 }
             });
         }

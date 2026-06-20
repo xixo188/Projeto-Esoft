@@ -1,4 +1,3 @@
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,12 +14,7 @@ public class Store {
     public final List<TorneioApp.SoldTicket> soldTickets = new ArrayList<>();
     public final List<Patrocinio> patrocinios = new ArrayList<>();
 
-    /*
-     * Guarda os golos e cartões de cada jogador
-     * num determinado jogo.
-     */
-    public final List<EstatisticaJogadorJogo> playerGameStats =
-            new ArrayList<>();
+    public final List<EstatisticaJogadorJogo> playerGameStats = new ArrayList<>();
 
     public boolean calendarGenerated = false;
 
@@ -34,7 +28,6 @@ public class Store {
         if (instance == null) {
             instance = new Store();
         }
-
         return instance;
     }
 
@@ -57,11 +50,8 @@ public class Store {
         if (name == null) {
             return null;
         }
-
         return teams.stream()
-                .filter(team ->
-                        team.name.equalsIgnoreCase(name.trim())
-                )
+                .filter(team -> team.name.equalsIgnoreCase(name.trim()))
                 .findFirst()
                 .orElse(null);
     }
@@ -98,134 +88,70 @@ public class Store {
     // VALIDAÇÕES DE EQUIPAS E JOGADORES
     // =========================================================
 
-    public boolean teamNameExists(
-            String name,
-            TorneioApp.Team ignoredTeam
-    ) {
+    public boolean teamNameExists(String name, TorneioApp.Team ignoredTeam) {
         return teams.stream()
-                .anyMatch(team ->
-                        team != ignoredTeam &&
-                                team.name.equalsIgnoreCase(name.trim())
-                );
+                .anyMatch(team -> team != ignoredTeam && team.name.equalsIgnoreCase(name.trim()));
     }
 
-    public boolean teamAcronymExists(
-            String acronym,
-            TorneioApp.Team ignoredTeam
-    ) {
+    public boolean teamAcronymExists(String acronym, TorneioApp.Team ignoredTeam) {
         return teams.stream()
-                .anyMatch(team ->
-                        team != ignoredTeam &&
-                                team.acronym.equalsIgnoreCase(acronym.trim())
-                );
+                .anyMatch(team -> team != ignoredTeam && team.acronym.equalsIgnoreCase(acronym.trim()));
     }
 
-    public boolean playerNumberExists(
-            TorneioApp.Team team,
-            int number,
-            TorneioApp.Player ignoredPlayer
-    ) {
-        if (team == null) {
-            return false;
-        }
-
+    public boolean playerNumberExists(TorneioApp.Team team, int number, TorneioApp.Player ignoredPlayer) {
+        if (team == null) return false;
         return team.players.stream()
-                .anyMatch(player ->
-                        player != ignoredPlayer &&
-                                player.number == number
-                );
+                .anyMatch(player -> player != ignoredPlayer && player.number == number);
     }
 
     // =========================================================
     // ESTATÍSTICAS DOS JOGADORES POR JOGO
     // =========================================================
 
-    public EstatisticaJogadorJogo findOrCreatePlayerGameStats(
-            TorneioApp.Game game,
-            TorneioApp.Team team,
-            TorneioApp.Player player
-    ) {
-        EstatisticaJogadorJogo existingStat =
-                playerGameStats.stream()
-                        .filter(stat ->
-                                stat.game == game &&
-                                        stat.player == player
-                        )
-                        .findFirst()
-                        .orElse(null);
+    public EstatisticaJogadorJogo findOrCreatePlayerGameStats(TorneioApp.Game game, TorneioApp.Team team, TorneioApp.Player player) {
+        EstatisticaJogadorJogo existingStat = playerGameStats.stream()
+                .filter(stat -> stat.game == game && stat.player == player)
+                .findFirst()
+                .orElse(null);
 
-        if (existingStat != null) {
-            return existingStat;
-        }
+        if (existingStat != null) return existingStat;
 
-        EstatisticaJogadorJogo newStat =
-                new EstatisticaJogadorJogo(
-                        game,
-                        team,
-                        player
-                );
-
+        EstatisticaJogadorJogo newStat = new EstatisticaJogadorJogo(game, team, player);
         playerGameStats.add(newStat);
-
         return newStat;
     }
 
-    public List<EstatisticaJogadorJogo> findPlayerStatsByGame(
-            TorneioApp.Game game
-    ) {
-        List<EstatisticaJogadorJogo> result =
-                new ArrayList<>();
-
+    public List<EstatisticaJogadorJogo> findPlayerStatsByGame(TorneioApp.Game game) {
+        List<EstatisticaJogadorJogo> result = new ArrayList<>();
         for (EstatisticaJogadorJogo stat : playerGameStats) {
-            if (stat.game == game) {
-                result.add(stat);
-            }
+            if (stat.game == game) result.add(stat);
         }
-
         return result;
     }
 
-    public List<EstatisticaJogadorJogo> findPlayerStats(
-            TorneioApp.Player player
-    ) {
-        List<EstatisticaJogadorJogo> result =
-                new ArrayList<>();
-
+    public List<EstatisticaJogadorJogo> findPlayerStats(TorneioApp.Player player) {
+        List<EstatisticaJogadorJogo> result = new ArrayList<>();
         for (EstatisticaJogadorJogo stat : playerGameStats) {
-            if (stat.player == player) {
-                result.add(stat);
-            }
+            if (stat.player == player) result.add(stat);
         }
-
         return result;
     }
 
-    public void recalculateGameTotals(
-            TorneioApp.Game game
-    ) {
-        if (game == null) {
-            return;
-        }
+    public void recalculateGameTotals(TorneioApp.Game game) {
+        if (game == null) return;
 
         game.goalsA = 0;
         game.goalsB = 0;
-
         game.yellowA = 0;
         game.yellowB = 0;
-
         game.redA = 0;
         game.redB = 0;
 
-        TorneioApp.Team teamA =
-                findTeamByName(game.teamA);
-
-        TorneioApp.Team teamB =
-                findTeamByName(game.teamB);
+        TorneioApp.Team teamA = findTeamByName(game.teamA);
+        TorneioApp.Team teamB = findTeamByName(game.teamB);
 
         for (EstatisticaJogadorJogo stat : playerGameStats) {
-            if (stat.game != game) {
-                continue;
-            }
+            if (stat.game != game) continue;
 
             if (stat.team == teamA) {
                 game.goalsA += stat.goals;
@@ -239,20 +165,12 @@ public class Store {
         }
     }
 
-    public void removePlayerGameStats(
-            TorneioApp.Player player
-    ) {
-        playerGameStats.removeIf(stat ->
-                stat.player == player
-        );
+    public void removePlayerGameStats(TorneioApp.Player player) {
+        playerGameStats.removeIf(stat -> stat.player == player);
     }
 
-    public void removeGameStats(
-            TorneioApp.Game game
-    ) {
-        playerGameStats.removeIf(stat ->
-                stat.game == game
-        );
+    public void removeGameStats(TorneioApp.Game game) {
+        playerGameStats.removeIf(stat -> stat.game == game);
     }
 
     // =========================================================
@@ -261,559 +179,170 @@ public class Store {
 
     private void inicializarDadosMock() {
 
-        /*
-         * O torneio não é criado automaticamente.
-         * O utilizador poderá criá-lo através da interface.
-         */
-        this.tournament = new TorneioApp.Tournament(
-                "Torneio ESoft 2026",
-                "10/06/2026",
-                "30/06/2026",
-                2
-        );
-
-        this.tournament.state = "em curso";
-        this.calendarGenerated = true;
+        this.tournament = new TorneioApp.Tournament("Torneio ESoft 2026", "10/06/2026", "30/06/2026", 2);
+        this.tournament.state = "em preparação";
+        this.calendarGenerated = false;
 
         // =====================================================
         // ESTÁDIOS
         // =====================================================
 
-        Estadio luz = new Estadio(
-                nextId(),
-                "Estádio da Luz",
-                "Lisboa",
-                65000
-        );
-
-        luz.bancadas.add(
-                new Bancada(
-                        nextId(),
-                        "Bancada Sagres",
-                        30000
-                )
-        );
-
+        Estadio luz = new Estadio(nextId(), "Estádio da Luz", "Lisboa", 65000);
+        luz.bancadas.add(new Bancada(nextId(), "Bancada Sagres", 30000));
         stadiums.add(luz);
 
-        Estadio dragao = new Estadio(
-                nextId(),
-                "Estádio do Dragão",
-                "Porto",
-                50000
-        );
-
-        dragao.bancadas.add(
-                new Bancada(
-                        nextId(),
-                        "Bancada Norte",
-                        25000
-                )
-        );
-
+        Estadio dragao = new Estadio(nextId(), "Estádio do Dragão", "Porto", 50000);
+        dragao.bancadas.add(new Bancada(nextId(), "Bancada Norte", 25000));
         stadiums.add(dragao);
 
-        Estadio alvalade = new Estadio(
-                nextId(),
-                "Estádio José Alvalade",
-                "Lisboa",
-                50000
-        );
-
-        alvalade.bancadas.add(
-                new Bancada(
-                        nextId(),
-                        "Bancada Sul",
-                        25000
-                )
-        );
-
+        Estadio alvalade = new Estadio(nextId(), "Estádio José Alvalade", "Lisboa", 50000);
+        alvalade.bancadas.add(new Bancada(nextId(), "Bancada Sul", 25000));
         stadiums.add(alvalade);
 
-        Estadio pedreira = new Estadio(
-                nextId(),
-                "Estádio Municipal",
-                "Braga",
-                30000
-        );
-
-        pedreira.bancadas.add(
-                new Bancada(
-                        nextId(),
-                        "Bancada Nascente",
-                        15000
-                )
-        );
-
+        Estadio pedreira = new Estadio(nextId(), "Estádio Municipal", "Braga", 30000);
+        pedreira.bancadas.add(new Bancada(nextId(), "Bancada Nascente", 15000));
         stadiums.add(pedreira);
 
         // =====================================================
-        // EQUIPAS
+        // 16 EQUIPAS
         // =====================================================
 
-        TorneioApp.Team benfica =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Benfica",
-                        "SLB",
-                        "Roger Schmidt",
-                        "Vermelho",
-                        "Preto",
-                        "🦅"
-                );
+        TorneioApp.Team benfica = new TorneioApp.Team(nextId(), "Benfica", "SLB", "Roger Schmidt", "Vermelho", "Preto", "🦅");
+        TorneioApp.Team porto = new TorneioApp.Team(nextId(), "Porto", "FCP", "Sérgio Conceição", "Azul", "Amarelo", "🐉");
+        TorneioApp.Team sporting = new TorneioApp.Team(nextId(), "Sporting", "SCP", "Rúben Amorim", "Verde", "Preto", "🦁");
+        TorneioApp.Team braga = new TorneioApp.Team(nextId(), "Sp. Braga", "SCB", "Artur Jorge", "Vermelho", "Branco", "⚔️");
+        TorneioApp.Team vitoria = new TorneioApp.Team(nextId(), "Vitória SC", "VSC", "Álvaro Pacheco", "Branco", "Preto", "🛡️");
+        TorneioApp.Team boavista = new TorneioApp.Team(nextId(), "Boavista", "BFC", "Petit", "Xadrez", "Preto", "🐆");
+        TorneioApp.Team famalicao = new TorneioApp.Team(nextId(), "Famalicão", "FCF", "João Pedro", "Branco", "Azul", "⚽");
+        TorneioApp.Team gilVicente = new TorneioApp.Team(nextId(), "Gil Vicente", "GVC", "Vítor Campelos", "Vermelho", "Azul", "🐓");
 
-        TorneioApp.Team porto =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Porto",
-                        "FCP",
-                        "Sérgio Conceição",
-                        "Azul",
-                        "Amarelo",
-                        "🐉"
-                );
+        TorneioApp.Team arouca = new TorneioApp.Team(nextId(), "Arouca", "FCA", "Daniel Sousa", "Amarelo", "Azul", "🟡");
+        TorneioApp.Team rioAve = new TorneioApp.Team(nextId(), "Rio Ave", "RAFC", "Luís Freire", "Verde", "Branco", "⛵");
+        TorneioApp.Team estoril = new TorneioApp.Team(nextId(), "Estoril Praia", "GDEP", "Vasco Seabra", "Amarelo", "Azul", "🏖️");
+        TorneioApp.Team farense = new TorneioApp.Team(nextId(), "Farense", "SCF", "José Mota", "Preto", "Branco", "🦁");
+        TorneioApp.Team portimonense = new TorneioApp.Team(nextId(), "Portimonense", "PSC", "Paulo Sérgio", "Preto", "Amarelo", "🦅");
+        TorneioApp.Team casaPia = new TorneioApp.Team(nextId(), "Casa Pia", "CPAC", "Gonçalo Santos", "Preto", "Branco", "🦆");
+        TorneioApp.Team chaves = new TorneioApp.Team(nextId(), "GD Chaves", "GDC", "Moreno", "Azul", "Grená", "⚔️");
+        TorneioApp.Team moreirense = new TorneioApp.Team(nextId(), "Moreirense", "MFC", "Rui Borges", "Verde", "Branco", "🟢");
 
-        TorneioApp.Team sporting =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Sporting",
-                        "SCP",
-                        "Rúben Amorim",
-                        "Verde",
-                        "Preto",
-                        "🦁"
-                );
-
-        TorneioApp.Team braga =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Sp. Braga",
-                        "SCB",
-                        "Artur Jorge",
-                        "Vermelho",
-                        "Branco",
-                        "⚔️"
-                );
-
-        TorneioApp.Team vitoria =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Vitória SC",
-                        "VSC",
-                        "Álvaro Pacheco",
-                        "Branco",
-                        "Preto",
-                        "🛡️"
-                );
-
-        TorneioApp.Team boavista =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Boavista",
-                        "BFC",
-                        "Petit",
-                        "Xadrez",
-                        "Preto",
-                        "🐆"
-                );
-
-        TorneioApp.Team famalicao =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Famalicão",
-                        "FCF",
-                        "João Pedro",
-                        "Branco",
-                        "Azul",
-                        "⚽"
-                );
-
-        TorneioApp.Team gilVicente =
-                new TorneioApp.Team(
-                        nextId(),
-                        "Gil Vicente",
-                        "GVC",
-                        "Vítor Campelos",
-                        "Vermelho",
-                        "Azul",
-                        "🐓"
-                );
-
-        teams.addAll(
-                List.of(
-                        benfica,
-                        porto,
-                        sporting,
-                        braga,
-                        vitoria,
-                        boavista,
-                        famalicao,
-                        gilVicente
-                )
-        );
+        teams.addAll(List.of(
+                benfica, porto, sporting, braga, vitoria, boavista, famalicao, gilVicente,
+                arouca, rioAve, estoril, farense, portimonense, casaPia, chaves, moreirense
+        ));
 
         // =====================================================
-        // JOGADORES DO BENFICA
+        // JOGADORES REAIS (4 por equipa)
         // =====================================================
 
-        adicionarJogador(
-                benfica,
-                "Anatoliy Trubin",
-                1,
-                "Guarda-Redes"
-        );
+        adicionarJogador(benfica, "Anatoliy Trubin", 1, "Guarda-Redes");
+        adicionarJogador(benfica, "António Silva", 4, "Defesa");
+        adicionarJogador(benfica, "João Neves", 87, "Médio");
+        adicionarJogador(benfica, "Rafa Silva", 27, "Avançado");
 
-        adicionarJogador(
-                benfica,
-                "António Silva",
-                4,
-                "Defesa"
-        );
+        adicionarJogador(porto, "Diogo Costa", 99, "Guarda-Redes");
+        adicionarJogador(porto, "Pepe", 3, "Defesa");
+        adicionarJogador(porto, "Alan Varela", 22, "Médio");
+        adicionarJogador(porto, "Evanilson", 30, "Avançado");
 
-        adicionarJogador(
-                benfica,
-                "João Neves",
-                87,
-                "Médio"
-        );
+        adicionarJogador(sporting, "Antonio Adán", 1, "Guarda-Redes");
+        adicionarJogador(sporting, "Gonçalo Inácio", 25, "Defesa");
+        adicionarJogador(sporting, "Pedro Gonçalves", 8, "Médio");
+        adicionarJogador(sporting, "Viktor Gyökeres", 9, "Avançado");
 
-        adicionarJogador(
-                benfica,
-                "Rafa Silva",
-                27,
-                "Avançado"
-        );
+        adicionarJogador(braga, "Matheus", 1, "Guarda-Redes");
+        adicionarJogador(braga, "José Fonte", 6, "Defesa");
+        adicionarJogador(braga, "João Moutinho", 28, "Médio");
+        adicionarJogador(braga, "Ricardo Horta", 21, "Avançado");
 
-        // =====================================================
-        // JOGADORES DO PORTO
-        // =====================================================
+        adicionarJogador(vitoria, "Bruno Varela", 14, "Guarda-Redes");
+        adicionarJogador(vitoria, "Toni Borevkovic", 24, "Defesa");
+        adicionarJogador(vitoria, "André André", 21, "Médio");
+        adicionarJogador(vitoria, "Jota Silva", 11, "Avançado");
 
-        adicionarJogador(
-                porto,
-                "Diogo Costa",
-                99,
-                "Guarda-Redes"
-        );
+        adicionarJogador(boavista, "João Gonçalves", 99, "Guarda-Redes");
+        adicionarJogador(boavista, "Rodrigo Abascal", 26, "Defesa");
+        adicionarJogador(boavista, "Sebastián Pérez", 24, "Médio");
+        adicionarJogador(boavista, "Róbert Boženík", 9, "Avançado");
 
-        adicionarJogador(
-                porto,
-                "Pepe",
-                3,
-                "Defesa"
-        );
+        adicionarJogador(famalicao, "Luiz Júnior", 31, "Guarda-Redes");
+        adicionarJogador(famalicao, "Riccieli", 15, "Defesa");
+        adicionarJogador(famalicao, "Zaydou Youssouf", 28, "Médio");
+        adicionarJogador(famalicao, "Jhonder Cádiz", 29, "Avançado");
 
-        adicionarJogador(
-                porto,
-                "Alan Varela",
-                22,
-                "Médio"
-        );
+        adicionarJogador(gilVicente, "Andrew", 42, "Guarda-Redes");
+        adicionarJogador(gilVicente, "Gabriel Pereira", 13, "Defesa");
+        adicionarJogador(gilVicente, "Kanya Fujimoto", 10, "Médio");
+        adicionarJogador(gilVicente, "Depú", 9, "Avançado");
 
-        adicionarJogador(
-                porto,
-                "Evanilson",
-                30,
-                "Avançado"
-        );
+        adicionarJogador(arouca, "Arruabarrena", 12, "Guarda-Redes");
+        adicionarJogador(arouca, "Javi Montero", 4, "Defesa");
+        adicionarJogador(arouca, "David Simão", 5, "Médio");
+        adicionarJogador(arouca, "Rafa Mújica", 19, "Avançado");
 
-        // =====================================================
-        // JOGADORES DO SPORTING
-        // =====================================================
+        adicionarJogador(rioAve, "Jhonatan", 18, "Guarda-Redes");
+        adicionarJogador(rioAve, "Aderllan Santos", 33, "Defesa");
+        adicionarJogador(rioAve, "Guga", 10, "Médio");
+        adicionarJogador(rioAve, "Emmanuel Boateng", 21, "Avançado");
 
-        adicionarJogador(
-                sporting,
-                "Antonio Adán",
-                1,
-                "Guarda-Redes"
-        );
+        adicionarJogador(estoril, "Marcelo Carné", 81, "Guarda-Redes");
+        adicionarJogador(estoril, "Bernardo Vital", 3, "Defesa");
+        adicionarJogador(estoril, "Mateus Fernandes", 82, "Médio");
+        adicionarJogador(estoril, "Rodrigo Gomes", 33, "Avançado");
 
-        adicionarJogador(
-                sporting,
-                "Gonçalo Inácio",
-                25,
-                "Defesa"
-        );
+        adicionarJogador(farense, "Ricardo Velho", 33, "Guarda-Redes");
+        adicionarJogador(farense, "Zach Muscat", 3, "Defesa");
+        adicionarJogador(farense, "Cláudio Falcão", 29, "Médio");
+        adicionarJogador(farense, "Bruno Duarte", 9, "Avançado");
 
-        adicionarJogador(
-                sporting,
-                "Pedro Gonçalves",
-                8,
-                "Médio"
-        );
+        adicionarJogador(portimonense, "Kosuke Nakamura", 32, "Guarda-Redes");
+        adicionarJogador(portimonense, "Pedrão", 44, "Defesa");
+        adicionarJogador(portimonense, "Carlinhos", 11, "Médio");
+        adicionarJogador(portimonense, "Hélio Varela", 10, "Avançado");
 
-        adicionarJogador(
-                sporting,
-                "Viktor Gyökeres",
-                9,
-                "Avançado"
-        );
+        adicionarJogador(casaPia, "Ricardo Batista", 33, "Guarda-Redes");
+        adicionarJogador(casaPia, "Fernando Varela", 15, "Defesa");
+        adicionarJogador(casaPia, "Neto", 8, "Médio");
+        adicionarJogador(casaPia, "Felippe Cardoso", 9, "Avançado");
+
+        adicionarJogador(chaves, "Hugo Souza", 1, "Guarda-Redes");
+        adicionarJogador(chaves, "Steven Vitória", 19, "Defesa");
+        adicionarJogador(chaves, "Rúben Ribeiro", 10, "Médio");
+        adicionarJogador(chaves, "Héctor Hernández", 23, "Avançado");
+
+        adicionarJogador(moreirense, "Kewin Silva", 40, "Guarda-Redes");
+        adicionarJogador(moreirense, "Maracás", 44, "Defesa");
+        adicionarJogador(moreirense, "Alan", 11, "Médio");
+        adicionarJogador(moreirense, "André Luís", 9, "Avançado");
 
         // =====================================================
-        // JOGADORES DO BRAGA
+        // ALGORITMO: PREENCHER CADA EQUIPA ATÉ TER 24 JOGADORES
         // =====================================================
+        for (TorneioApp.Team t : teams) {
+            int numJogadoresFalta = 24 - t.players.size();
+            int numeroCamisolaBase = 30; // Garante números únicos
 
-        adicionarJogador(
-                braga,
-                "Matheus",
-                1,
-                "Guarda-Redes"
-        );
+            for (int i = 0; i < numJogadoresFalta; i++) {
+                String posicao;
+                // Distribui realisticamente as posições pelo plantel
+                if (i < 2) posicao = "Guarda-Redes";
+                else if (i < 8) posicao = "Defesa";
+                else if (i < 15) posicao = "Médio";
+                else posicao = "Avançado";
 
-        adicionarJogador(
-                braga,
-                "José Fonte",
-                6,
-                "Defesa"
-        );
-
-        adicionarJogador(
-                braga,
-                "João Moutinho",
-                28,
-                "Médio"
-        );
-
-        adicionarJogador(
-                braga,
-                "Ricardo Horta",
-                21,
-                "Avançado"
-        );
-
-        // =====================================================
-        // JOGADORES DO VITÓRIA SC
-        // =====================================================
-
-        adicionarJogador(
-                vitoria,
-                "Bruno Varela",
-                14,
-                "Guarda-Redes"
-        );
-
-        adicionarJogador(
-                vitoria,
-                "Toni Borevkovic",
-                24,
-                "Defesa"
-        );
-
-        adicionarJogador(
-                vitoria,
-                "André André",
-                21,
-                "Médio"
-        );
-
-        adicionarJogador(
-                vitoria,
-                "Jota Silva",
-                11,
-                "Avançado"
-        );
-
-        // =====================================================
-        // JOGADORES DO BOAVISTA
-        // =====================================================
-
-        adicionarJogador(
-                boavista,
-                "João Gonçalves",
-                99,
-                "Guarda-Redes"
-        );
-
-        adicionarJogador(
-                boavista,
-                "Rodrigo Abascal",
-                26,
-                "Defesa"
-        );
-
-        adicionarJogador(
-                boavista,
-                "Sebastián Pérez",
-                24,
-                "Médio"
-        );
-
-        adicionarJogador(
-                boavista,
-                "Róbert Boženík",
-                9,
-                "Avançado"
-        );
-
-        // =====================================================
-        // JOGADORES DO FAMALICÃO
-        // =====================================================
-
-        adicionarJogador(
-                famalicao,
-                "Luiz Júnior",
-                31,
-                "Guarda-Redes"
-        );
-
-        adicionarJogador(
-                famalicao,
-                "Riccieli",
-                15,
-                "Defesa"
-        );
-
-        adicionarJogador(
-                famalicao,
-                "Zaydou Youssouf",
-                28,
-                "Médio"
-        );
-
-        adicionarJogador(
-                famalicao,
-                "Jhonder Cádiz",
-                29,
-                "Avançado"
-        );
-
-        // =====================================================
-        // JOGADORES DO GIL VICENTE
-        // =====================================================
-
-        adicionarJogador(
-                gilVicente,
-                "Andrew",
-                42,
-                "Guarda-Redes"
-        );
-
-        adicionarJogador(
-                gilVicente,
-                "Gabriel Pereira",
-                13,
-                "Defesa"
-        );
-
-        adicionarJogador(
-                gilVicente,
-                "Kanya Fujimoto",
-                10,
-                "Médio"
-        );
-
-        adicionarJogador(
-                gilVicente,
-                "Depú",
-                9,
-                "Avançado"
-        );
+                adicionarJogador(t, "Jogador " + (t.players.size() + 1) + " (" + t.acronym + ")", numeroCamisolaBase++, posicao);
+            }
+        }
 
         // =====================================================
         // PATROCÍNIOS
         // =====================================================
 
-        patrocinios.add(
-                new Patrocinio(
-                        nextId(),
-                        "Sagres",
-                        "Sponsor de Bebidas",
-                        50000.00
-                )
-        );
+        patrocinios.add(new Patrocinio(nextId(), "Sagres", "Sponsor de Bebidas", 50000.00));
+        patrocinios.add(new Patrocinio(nextId(), "Betano", "Sponsor Principal", 120000.00));
 
-        patrocinios.add(
-                new Patrocinio(
-                        nextId(),
-                        "Betano",
-                        "Sponsor Principal",
-                        120000.00
-                )
-        );
-
-        TorneioApp.Game q1 = new TorneioApp.Game(
-                nextId(),
-                "Quartos de Final",
-                "Benfica",
-                "Sp. Braga",
-                "10/06/2026 18:00",
-                luz
-        );
-
-        TorneioApp.Game q2 = new TorneioApp.Game(
-                nextId(),
-                "Quartos de Final",
-                "Porto",
-                "Vitória SC",
-                "11/06/2026 20:00",
-                dragao
-        );
-
-        TorneioApp.Game q3 = new TorneioApp.Game(
-                nextId(),
-                "Quartos de Final",
-                "Sporting",
-                "Famalicão",
-                "12/06/2026 18:00",
-                alvalade
-        );
-
-        TorneioApp.Game q4 = new TorneioApp.Game(
-                nextId(),
-                "Quartos de Final",
-                "Boavista",
-                "Gil Vicente",
-                "13/06/2026 20:00",
-                pedreira
-        );
-
-        TorneioApp.Game s1 = new TorneioApp.Game(
-                nextId(),
-                "Semifinais",
-                "A determinar",
-                "A determinar",
-                "20/06/2026 18:00",
-                luz
-        );
-
-        TorneioApp.Game s2 = new TorneioApp.Game(
-                nextId(),
-                "Semifinais",
-                "A determinar",
-                "A determinar",
-                "21/06/2026 20:00",
-                dragao
-        );
-
-        games.add(q1);
-        games.add(q2);
-        games.add(q3);
-        games.add(q4);
-        games.add(s1);
-        games.add(s2);
-
-        /*
-         * Os jogos e bilhetes continuam vazios.
-         * Serão criados através da calendarização.
-         */
     }
 
-
-
-    private void adicionarJogador(
-            TorneioApp.Team team,
-            String name,
-            int number,
-            String position
-    ) {
-        team.players.add(
-                new TorneioApp.Player(
-                        nextId(),
-                        name,
-                        number,
-                        position,
-                        ""
-                )
-        );
+    private void adicionarJogador(TorneioApp.Team team, String name, int number, String position) {
+        team.players.add(new TorneioApp.Player(nextId(), name, number, position, ""));
     }
 }
-
