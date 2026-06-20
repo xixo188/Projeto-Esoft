@@ -254,64 +254,62 @@ public class TorneioApp extends JFrame {
     }
 
     public void generateCalendar() {
-        if (store.teams.size() < 8) {
-            error("Erro: O torneio tem de ter no mínimo 8 equipas.");
-            return;
+        for (Game g : store.games) {
+            if (g.state == GameState.EM_CURSO || g.state == GameState.CONCLUIDO) {
+                error("Erro: Não podes gerar um novo calendário porque o torneio já começou!");
+                return;
+            }
         }
-        if (store.teams.size() % 4 != 0) {
-            error("Erro: O número de equipas (" + store.teams.size() + ") tem de ser múltiplo de 4.");
+
+        if (store.teams.size() < 8 || store.teams.size() % 4 != 0) {
+            error("Erro: O torneio tem de ter no mínimo 8 equipas e ser múltiplo de 4.");
             return;
         }
         for (Team t : store.teams) {
             if (t.players.size() < 23) {
-                error("Erro: A equipa " + t.name + " tem apenas " + t.players.size() + " jogadores. São necessários pelo menos 23.");
+                error("Erro: A equipa " + t.name + " precisa de pelo menos 23 jogadores.");
                 return;
             }
         }
         if (store.stadiums.isEmpty()) {
-            error("Erro: Não existem estádios criados para agendar os jogos.");
+            error("Erro: Não existem estádios criados.");
             return;
         }
 
-        // Limpa completamente os jogos anteriores para gerar um calendário do zero
         store.games.clear();
 
         int numGrupos = store.teams.size() / 4;
         java.util.Random rand = new java.util.Random();
-
         int restDays = (store.tournament != null) ? store.tournament.restDays : 2;
         int gapEntreRondas = restDays + 1;
 
-        // 1. SORTEIO DAS EQUIPAS: Baralha uma cópia das equipas para criar grupos e jogos totalmente novos a cada clique!
+        // Sorteia as equipas e SALVA essa nova ordem na base de dados para os grupos ficarem corretos na tabela
         java.util.List<Team> equipasSorteadas = new java.util.ArrayList<>(store.teams);
         java.util.Collections.shuffle(equipasSorteadas, rand);
+        store.teams.clear();
+        store.teams.addAll(equipasSorteadas);
 
-        // Controlo de estádios: garante no máximo 1 jogo por dia no mesmo estádio
         java.util.Map<String, java.util.List<Estadio>> estadiosLivresPorDia = new java.util.HashMap<>();
+        int maxDiasAcumulados = 0;
 
+        // --- 1. GERAR FASE DE GRUPOS ---
         for (int i = 0; i < numGrupos; i++) {
             int startIndex = i * 4;
-            // Divide as equipas baralhadas pelos grupos dinamicamente
-            java.util.List<Team> grupo = equipasSorteadas.subList(startIndex, startIndex + 4);
+            java.util.List<Team> grupo = store.teams.subList(startIndex, startIndex + 4);
 
-            int[][] confrontos = {
-                    {0, 1, 2, 3}, // Ronda 1
-                    {0, 2, 1, 3}, // Ronda 2
-                    {0, 3, 1, 2}  // Ronda 3
-            };
-
-            // Mantém os grupos ligeiramente desfasados para o fluxo de estádios por dia bater certo
+            int[][] confrontos = {{0, 1, 2, 3}, {0, 2, 1, 3}, {0, 3, 1, 2}};
             int grupoOffsetDias = i * 1;
 
             for (int ronda = 0; ronda < 3; ronda++) {
                 int diasAcumulados = grupoOffsetDias + (ronda * gapEntreRondas);
-                String dataBase = addDays(store.tournament.startDate, diasAcumulados);
+                if (diasAcumulados > maxDiasAcumulados) maxDiasAcumulados = diasAcumulados;
 
+                String dataBase = addDays(store.tournament.startDate, diasAcumulados);
                 estadiosLivresPorDia.putIfAbsent(dataBase, new java.util.ArrayList<>(store.stadiums));
                 java.util.List<Estadio> livresHoje = estadiosLivresPorDia.get(dataBase);
 
-                if (livresHoje.isEmpty()) {
-                    error("Erro de Logística: Demasiados jogos para o dia " + dataBase + " e não há estádios suficientes (máx 1 jogo/dia por estádio).");
+                if (livresHoje.size() < 2) {
+                    error("Erro: Não há estádios suficientes para gerar os jogos da Fase de Grupos.");
                     return;
                 }
 
@@ -320,46 +318,95 @@ public class TorneioApp extends JFrame {
                 Team t3 = grupo.get(confrontos[ronda][2]);
                 Team t4 = grupo.get(confrontos[ronda][3]);
 
-                // 2. HORÁRIOS DINÂMICOS: Define horas variadas de forma aleatória para cada partida
-                String hora1 = "18:00";
-                String hora2 = "20:30";
-
-                // Exemplo do Clássico: Se for Benfica vs Porto, força a sugestão das 16:00
-                if ((t1.name.equals("Benfica") && t2.name.equals("Porto")) || (t1.name.equals("Porto") && t2.name.equals("Benfica"))) {
-                    hora1 = "16:00";
-                } else if ((t3.name.equals("Benfica") && t4.name.equals("Porto")) || (t3.name.equals("Porto") && t4.name.equals("Benfica"))) {
-                    hora2 = "16:00";
-                } else {
-                    // Caso não seja o clássico, sorteia horários diferentes para os dois jogos do dia
-                    String[] horariosPossiveis = {"16:00", "18:00", "20:30"};
-                    hora1 = horariosPossiveis[rand.nextInt(3)];
-                    hora2 = horariosPossiveis[rand.nextInt(3)];
-                    while (hora1.equals(hora2)) {
-                        hora2 = horariosPossiveis[rand.nextInt(3)];
-                    }
-                }
-
-                // --- AGENDAR JOGO 1 ---
-                Estadio est1 = livresHoje.remove(rand.nextInt(livresHoje.size()));
-                Game jogo1 = new Game(store.nextId(), "Fase de Grupos", t1.name, t2.name, dataBase + " " + hora1, est1);
-                store.games.add(jogo1);
-
-                // --- AGENDAR JOGO 2 ---
-                if (livresHoje.isEmpty()) {
-                    error("Erro de Logística: Demasiados jogos para o dia " + dataBase + " e não há estádios suficientes.");
-                    return;
-                }
-                Estadio est2 = livresHoje.remove(rand.nextInt(livresHoje.size()));
-                Game jogo2 = new Game(store.nextId(), "Fase de Grupos", t3.name, t4.name, dataBase + " " + hora2, est2);
-                store.games.add(jogo2);
+                store.games.add(new Game(store.nextId(), "Fase de Grupos", t1.name, t2.name, dataBase + " 18:00", livresHoje.remove(rand.nextInt(livresHoje.size()))));
+                store.games.add(new Game(store.nextId(), "Fase de Grupos", t3.name, t4.name, dataBase + " 20:30", livresHoje.remove(rand.nextInt(livresHoje.size()))));
             }
         }
 
-        store.calendarGenerated = true;
-        info("Novo Calendário sorteado com sucesso! Grupos reestruturados, novas datas, horários e estádios distribuídos.");
+        // --- 2. GERAR FASE DE ELIMINAÇÃO (QUARTOS E SEMIFINAIS) ---
+        int diasQuartos = maxDiasAcumulados + gapEntreRondas;
+        String dataQ1 = addDays(store.tournament.startDate, diasQuartos);
+        String dataQ2 = addDays(store.tournament.startDate, diasQuartos + 1); // Quartos divididos em 2 dias
 
-        // Força a atualização do ecrã com a revolução total dos novos dados
+        estadiosLivresPorDia.putIfAbsent(dataQ1, new java.util.ArrayList<>(store.stadiums));
+        estadiosLivresPorDia.putIfAbsent(dataQ2, new java.util.ArrayList<>(store.stadiums));
+
+        if (estadiosLivresPorDia.get(dataQ1).size() < 2 || estadiosLivresPorDia.get(dataQ2).size() < 2) {
+            error("Erro: Precisas de pelo menos 2 estádios para sediar as eliminatórias.");
+            return;
+        }
+
+        store.games.add(new Game(store.nextId(), "Quartos de Final", "A determinar", "A determinar", dataQ1 + " 18:00", estadiosLivresPorDia.get(dataQ1).remove(0)));
+        store.games.add(new Game(store.nextId(), "Quartos de Final", "A determinar", "A determinar", dataQ1 + " 20:30", estadiosLivresPorDia.get(dataQ1).remove(0)));
+        store.games.add(new Game(store.nextId(), "Quartos de Final", "A determinar", "A determinar", dataQ2 + " 18:00", estadiosLivresPorDia.get(dataQ2).remove(0)));
+        store.games.add(new Game(store.nextId(), "Quartos de Final", "A determinar", "A determinar", dataQ2 + " 20:30", estadiosLivresPorDia.get(dataQ2).remove(0)));
+
+        int diasSemis = diasQuartos + gapEntreRondas + 1;
+        String dataSemis = addDays(store.tournament.startDate, diasSemis);
+        estadiosLivresPorDia.putIfAbsent(dataSemis, new java.util.ArrayList<>(store.stadiums));
+
+        store.games.add(new Game(store.nextId(), "Semifinais", "A determinar", "A determinar", dataSemis + " 18:00", estadiosLivresPorDia.get(dataSemis).remove(0)));
+        store.games.add(new Game(store.nextId(), "Semifinais", "A determinar", "A determinar", dataSemis + " 20:30", estadiosLivresPorDia.get(dataSemis).remove(0)));
+        // --- ADICIONA ESTA PARTE PARA A FINAL ---
+        int diasFinal = diasSemis + gapEntreRondas;
+        String dataFinal = addDays(store.tournament.startDate, diasFinal);
+        estadiosLivresPorDia.putIfAbsent(dataFinal, new java.util.ArrayList<>(store.stadiums));
+
+        // Garante que há um estádio para a grande final
+        if(estadiosLivresPorDia.get(dataFinal).isEmpty()) estadiosLivresPorDia.get(dataFinal).addAll(store.stadiums);
+
+        store.games.add(new Game(store.nextId(), "Final", "A determinar", "A determinar", dataFinal + " 20:30", estadiosLivresPorDia.get(dataFinal).remove(0)));
+        store.calendarGenerated = true;
+        info("Novo Calendário sorteado com sucesso! Grupos e Eliminatórias definidas.");
         Calendario.showCalendario(this, store);
+    }
+
+    public void apurarFaseEliminacao() {
+        boolean todosConcluidos = store.games.stream()
+                .filter(g -> g.phase.equals("Fase de Grupos"))
+                .allMatch(g -> g.state == GameState.CONCLUIDO);
+
+        if (!todosConcluidos) {
+            error("Ainda existem jogos da Fase de Grupos por concluir! As equipas só podem avançar no fim.");
+            return;
+        }
+
+        // 1. Calcula Pontos
+        java.util.Map<String, Integer> pontos = new java.util.HashMap<>();
+        for (Team t : store.teams) pontos.put(t.name, 0);
+
+        for (Game g : store.games) {
+            if (g.phase.equals("Fase de Grupos") && g.state == GameState.CONCLUIDO) {
+                if (g.goalsA > g.goalsB) pontos.put(g.teamA, pontos.get(g.teamA) + 3);
+                else if (g.goalsB > g.goalsA) pontos.put(g.teamB, pontos.get(g.teamB) + 3);
+                else {
+                    pontos.put(g.teamA, pontos.get(g.teamA) + 1);
+                    pontos.put(g.teamB, pontos.get(g.teamB) + 1);
+                }
+            }
+        }
+
+        // 2. Organiza 1ºs e 2ºs lugares
+        java.util.List<Team> apurados = new java.util.ArrayList<>();
+        for (int i = 0; i < 4; i++) { // Percorre Grupos A, B, C, D
+            java.util.List<Team> grupo = new java.util.ArrayList<>(store.teams.subList(i * 4, i * 4 + 4));
+            grupo.sort((t1, t2) -> pontos.get(t2.name).compareTo(pontos.get(t1.name))); // Ordena por pontos
+            apurados.add(grupo.get(0)); // Adiciona 1º do grupo
+            apurados.add(grupo.get(1)); // Adiciona 2º do grupo
+        }
+
+        // 3. Preenche os jogos dos Quartos
+        java.util.List<Game> quartos = new java.util.ArrayList<>();
+        for (Game g : store.games) if (g.phase.equals("Quartos de Final")) quartos.add(g);
+
+        if (quartos.size() == 4) {
+            quartos.get(0).teamA = apurados.get(0).name; quartos.get(0).teamB = apurados.get(3).name; // 1ºA vs 2ºB
+            quartos.get(1).teamA = apurados.get(2).name; quartos.get(1).teamB = apurados.get(1).name; // 1ºB vs 2ºA
+            quartos.get(2).teamA = apurados.get(4).name; quartos.get(2).teamB = apurados.get(7).name; // 1ºC vs 2ºD
+            quartos.get(3).teamA = apurados.get(6).name; quartos.get(3).teamB = apurados.get(5).name; // 1ºD vs 2ºC
+
+            info("Fase de Eliminação gerada com sucesso! As 8 melhores equipas avançaram para os Quartos de Final.");
+        }
     }
 
     private String addDays(String date, int days) {
