@@ -6,8 +6,8 @@ public class JogadorPainelControlador {
     public static void showPlayerDetails(
             TorneioApp app,
             Store store,
-            TorneioApp.Team team,
-            TorneioApp.Player player
+            Equipa team,
+            Jogador player
     ) {
         JPanel panel = new JPanel(new BorderLayout(12, 12));
 
@@ -67,8 +67,8 @@ public class JogadorPainelControlador {
     public static void showPlayerForm(
             TorneioApp app,
             Store store,
-            TorneioApp.Team team,
-            TorneioApp.Player editing
+            Equipa team,
+            Jogador editing
     ) {
         boolean isEdit = editing != null;
 
@@ -189,8 +189,8 @@ public class JogadorPainelControlador {
 
                 app.info("Jogador editado com sucesso.");
             } else {
-                TorneioApp.Player newPlayer =
-                        new TorneioApp.Player(
+                Jogador newPlayer =
+                        new Jogador(
                                 store.nextId(),
                                 name,
                                 number,
@@ -223,10 +223,10 @@ public class JogadorPainelControlador {
         );
     }
 
-    public static TorneioApp.Player selectedPlayer(
+    public static Jogador selectedPlayer(
             TorneioApp app,
             JTable table,
-            TorneioApp.Team team
+            Equipa team
     ) {
         int selectedRow = table.getSelectedRow();
 
@@ -242,7 +242,7 @@ public class JogadorPainelControlador {
                 0
         );
 
-        TorneioApp.Player player =
+        Jogador player =
                 team.players.stream()
                         .filter(p -> p.id == id)
                         .findFirst()
@@ -260,8 +260,8 @@ public class JogadorPainelControlador {
     private static void deletePlayer(
             TorneioApp app,
             Store store,
-            TorneioApp.Team team,
-            TorneioApp.Player player
+            Equipa team,
+            Jogador player
     ) {
         if (store.calendarGenerated) {
             app.error(
@@ -387,4 +387,3 @@ public class JogadorPainelControlador {
         return button;
     }
 }
-

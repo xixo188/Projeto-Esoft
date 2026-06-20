@@ -28,7 +28,7 @@ public class BilhetePainelControlador {
             }
         };
 
-        for (TorneioApp.TicketBatch t : store.tickets) {
+        for (LoteBilhetes t : store.tickets) {
             model.addRow(new Object[]{
                     t.id,
                     t.game.teamA + " vs " + t.game.teamB,
@@ -47,24 +47,24 @@ public class BilhetePainelControlador {
         create.addActionListener(e -> showTicketForm(app, store, null));
 
         buy.addActionListener(e -> {
-            TorneioApp.TicketBatch tb = selectedTicket(app, table, store);
+            LoteBilhetes tb = selectedTicket(app, table, store);
             if (tb != null) showTicketDetails(app, store, tb);
         });
 
         edit.addActionListener(e -> {
-            TorneioApp.TicketBatch tb = selectedTicket(app, table, store);
+            LoteBilhetes tb = selectedTicket(app, table, store);
             if (tb != null) showEditTicketPriceForm(app, store, tb);
         });
 
         delete.addActionListener(e -> {
-            TorneioApp.TicketBatch tb = selectedTicket(app, table, store);
+            LoteBilhetes tb = selectedTicket(app, table, store);
             if (tb != null) showTicketDetails(app, store, tb);
         });
 
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    TorneioApp.TicketBatch tb = selectedTicket(app, table, store);
+                    LoteBilhetes tb = selectedTicket(app, table, store);
                     if (tb != null) showTicketDetails(app, store, tb);
                 }
             }
@@ -78,7 +78,7 @@ public class BilhetePainelControlador {
         app.setPage("Lista de Bilhetes", p);
     }
 
-    private static void showTicketDetails(TorneioApp app, Store store, TorneioApp.TicketBatch tb) {
+    private static void showTicketDetails(TorneioApp app, Store store, LoteBilhetes tb) {
         JPanel p = new JPanel(new BorderLayout(12, 12));
 
         JTextArea infoArea = new JTextArea();
@@ -117,11 +117,11 @@ public class BilhetePainelControlador {
         app.setPage("Bilhete", p);
     }
 
-    private static void showTicketForm(TorneioApp app, Store store, TorneioApp.TicketBatch editing) {
+    private static void showTicketForm(TorneioApp app, Store store, LoteBilhetes editing) {
         boolean isEdit = editing != null;
 
-        JComboBox<TorneioApp.Game> gameBox = new JComboBox<>();
-        for (TorneioApp.Game g : store.games) {
+        JComboBox<Jogo> gameBox = new JComboBox<>();
+        for (Jogo g : store.games) {
             gameBox.addItem(g);
         }
 
@@ -193,8 +193,8 @@ public class BilhetePainelControlador {
             }
 
             if (isEdit) {
-                if (editing.game.state == TorneioApp.GameState.EM_CURSO ||
-                        editing.game.state == TorneioApp.GameState.CONCLUIDO) {
+                if (editing.game.state == EstadoJogo.EM_CURSO ||
+                        editing.game.state == EstadoJogo.CONCLUIDO) {
                     app.error("O preço do bilhete só pode ser editado até ao início do jogo.");
                     return;
                 }
@@ -202,7 +202,7 @@ public class BilhetePainelControlador {
                 editing.price = priceVal;
                 app.info("Preço editado com sucesso.");
             } else {
-                TorneioApp.Game game = (TorneioApp.Game) gameBox.getSelectedItem();
+                Jogo game = (Jogo) gameBox.getSelectedItem();
                 Bancada stand = (Bancada) standBox.getSelectedItem();
 
                 if (game == null || stand == null) {
@@ -229,7 +229,7 @@ public class BilhetePainelControlador {
                     return;
                 }
 
-                store.tickets.add(new TorneioApp.TicketBatch(
+                store.tickets.add(new LoteBilhetes(
                         store.nextId(),
                         game,
                         stand,
@@ -250,10 +250,10 @@ public class BilhetePainelControlador {
         app.setPage(isEdit ? "Editar Preço do Bilhete" : "Definir Bilhetes", p);
     }
 
-    private static void refreshStandsCombo(JComboBox<TorneioApp.Game> gameBox, JComboBox<Bancada> standBox) {
+    private static void refreshStandsCombo(JComboBox<Jogo> gameBox, JComboBox<Bancada> standBox) {
         standBox.removeAllItems();
 
-        TorneioApp.Game g = (TorneioApp.Game) gameBox.getSelectedItem();
+        Jogo g = (Jogo) gameBox.getSelectedItem();
 
         if (g != null && g.stadium != null) {
             for (Bancada st : g.stadium.bancadas) {
@@ -262,9 +262,9 @@ public class BilhetePainelControlador {
         }
     }
 
-    private static void showEditTicketPriceForm(TorneioApp app, Store store, TorneioApp.TicketBatch ticket) {
-        if (ticket.game.state == TorneioApp.GameState.EM_CURSO ||
-                ticket.game.state == TorneioApp.GameState.CONCLUIDO) {
+    private static void showEditTicketPriceForm(TorneioApp app, Store store, LoteBilhetes ticket) {
+        if (ticket.game.state == EstadoJogo.EM_CURSO ||
+                ticket.game.state == EstadoJogo.CONCLUIDO) {
             app.error("O preço do bilhete só pode ser editado até ao início do jogo.");
             return;
         }
@@ -322,7 +322,7 @@ public class BilhetePainelControlador {
         app.setPage("Editar Preço do Bilhete", p);
     }
 
-    private static void buyTicket(TorneioApp app, Store store, TorneioApp.TicketBatch tb) {
+    private static void buyTicket(TorneioApp app, Store store, LoteBilhetes tb) {
         if (tb.available <= 0) {
             app.error("Erro: bilhetes esgotados.");
             return;
@@ -331,7 +331,7 @@ public class BilhetePainelControlador {
         tb.available--;
         tb.sold++;
 
-        store.soldTickets.add(new TorneioApp.SoldTicket(
+        store.soldTickets.add(new BilheteVendido(
                 "BIL-" + store.nextId(),
                 tb,
                 tb.price
@@ -341,9 +341,9 @@ public class BilhetePainelControlador {
         showTicketsPage(app, store);
     }
 
-    private static void deleteTicket(TorneioApp app, Store store, TorneioApp.TicketBatch tb) {
-        if (tb.game.state == TorneioApp.GameState.EM_CURSO ||
-                tb.game.state == TorneioApp.GameState.CONCLUIDO) {
+    private static void deleteTicket(TorneioApp app, Store store, LoteBilhetes tb) {
+        if (tb.game.state == EstadoJogo.EM_CURSO ||
+                tb.game.state == EstadoJogo.CONCLUIDO) {
             app.error("Não é permitido eliminar bilhetes após o início do jogo.");
             return;
         }
@@ -358,7 +358,7 @@ public class BilhetePainelControlador {
         showTicketsPage(app, store);
     }
 
-    private static TorneioApp.TicketBatch selectedTicket(TorneioApp app, JTable table, Store store) {
+    private static LoteBilhetes selectedTicket(TorneioApp app, JTable table, Store store) {
         int row = table.getSelectedRow();
 
         if (row < 0) {

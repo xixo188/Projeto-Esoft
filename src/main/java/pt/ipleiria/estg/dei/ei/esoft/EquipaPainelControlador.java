@@ -22,7 +22,7 @@ public class EquipaPainelControlador {
                 "Jogadores"
         );
 
-        for (TorneioApp.Team team : store.teams) {
+        for (Equipa team : store.teams) {
             model.addRow(new Object[]{
                     team.id,
                     team.name,
@@ -44,7 +44,7 @@ public class EquipaPainelControlador {
         });
 
         viewButton.addActionListener(e -> {
-            TorneioApp.Team team = selectedTeam(app, table, store);
+            Equipa team = selectedTeam(app, table, store);
 
             if (team != null) {
                 showTeamDetails(app, store, team);
@@ -52,7 +52,7 @@ public class EquipaPainelControlador {
         });
 
         table.addMouseListener(doubleClick(() -> {
-            TorneioApp.Team team = selectedTeam(app, table, store);
+            Equipa team = selectedTeam(app, table, store);
 
             if (team != null) {
                 showTeamDetails(app, store, team);
@@ -79,7 +79,7 @@ public class EquipaPainelControlador {
     public static void showTeamDetails(
             TorneioApp app,
             Store store,
-            TorneioApp.Team team
+            Equipa team
     ) {
         JPanel panel = new JPanel(new BorderLayout(12, 12));
 
@@ -108,7 +108,7 @@ public class EquipaPainelControlador {
                 "Posição"
         );
 
-        for (TorneioApp.Player player : team.players) {
+        for (Jogador player : team.players) {
             model.addRow(new Object[]{
                     player.id,
                     player.name,
@@ -167,7 +167,7 @@ public class EquipaPainelControlador {
         });
 
         viewPlayerButton.addActionListener(e -> {
-            TorneioApp.Player player =
+            Jogador player =
                     JogadorPainelControlador.selectedPlayer(
                             app,
                             playerTable,
@@ -185,7 +185,7 @@ public class EquipaPainelControlador {
         });
 
         playerTable.addMouseListener(doubleClick(() -> {
-            TorneioApp.Player player =
+            Jogador player =
                     JogadorPainelControlador.selectedPlayer(
                             app,
                             playerTable,
@@ -225,7 +225,7 @@ public class EquipaPainelControlador {
     private static void showTeamForm(
             TorneioApp app,
             Store store,
-            TorneioApp.Team editing
+            Equipa editing
     ) {
         boolean isEdit = editing != null;
 
@@ -357,8 +357,8 @@ public class EquipaPainelControlador {
 
                 app.info("Equipa editada com sucesso.");
             } else {
-                TorneioApp.Team newTeam =
-                        new TorneioApp.Team(
+                Equipa newTeam =
+                        new Equipa(
                                 store.nextId(),
                                 name,
                                 acronym,
@@ -390,7 +390,7 @@ public class EquipaPainelControlador {
     private static void deleteTeam(
             TorneioApp app,
             Store store,
-            TorneioApp.Team team
+            Equipa team
     ) {
         if (store.calendarGenerated) {
             app.error(
@@ -419,7 +419,7 @@ public class EquipaPainelControlador {
         showTeamsPage(app, store);
     }
 
-    private static TorneioApp.Team selectedTeam(
+    private static Equipa selectedTeam(
             TorneioApp app,
             JTable table,
             Store store

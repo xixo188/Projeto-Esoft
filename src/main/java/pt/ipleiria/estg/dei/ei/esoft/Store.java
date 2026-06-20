@@ -5,13 +5,14 @@ public class Store {
 
     private static Store instance;
 
-    public TorneioApp.Tournament tournament;
+    public Torneio tournament;
 
-    public final List<TorneioApp.Team> teams = new ArrayList<>();
+    // Agora usa a nova classe Equipa
+    public final List<Equipa> teams = new ArrayList<>();
     public final List<Estadio> stadiums = new ArrayList<>();
-    public final List<TorneioApp.Game> games = new ArrayList<>();
-    public final List<TorneioApp.TicketBatch> tickets = new ArrayList<>();
-    public final List<TorneioApp.SoldTicket> soldTickets = new ArrayList<>();
+    public final List<Jogo> games = new ArrayList<>();
+    public final List<LoteBilhetes> tickets = new ArrayList<>();
+    public final List<BilheteVendido> soldTickets = new ArrayList<>();
     public final List<Patrocinio> patrocinios = new ArrayList<>();
 
     /* Mantido para compatibilidade com o código anterior. */
@@ -43,14 +44,14 @@ public class Store {
     // PESQUISAS
     // =========================================================
 
-    public TorneioApp.Team findTeam(int id) {
+    public Equipa findTeam(int id) {
         return teams.stream()
                 .filter(team -> team.id == id)
                 .findFirst()
                 .orElse(null);
     }
 
-    public TorneioApp.Team findTeamByName(String name) {
+    public Equipa findTeamByName(String name) {
         if (name == null) {
             return null;
         }
@@ -68,14 +69,14 @@ public class Store {
                 .orElse(null);
     }
 
-    public TorneioApp.Game findGame(int id) {
+    public Jogo findGame(int id) {
         return games.stream()
                 .filter(game -> game.id == id)
                 .findFirst()
                 .orElse(null);
     }
 
-    public TorneioApp.TicketBatch findTicket(int id) {
+    public LoteBilhetes findTicket(int id) {
         return tickets.stream()
                 .filter(ticket -> ticket.id == id)
                 .findFirst()
@@ -95,30 +96,30 @@ public class Store {
 
     public boolean teamNameExists(
             String name,
-            TorneioApp.Team ignoredTeam
+            Equipa ignoredTeam
     ) {
         return teams.stream()
                 .anyMatch(team ->
                         team != ignoredTeam &&
-                        team.name.equalsIgnoreCase(name.trim())
+                                team.name.equalsIgnoreCase(name.trim())
                 );
     }
 
     public boolean teamAcronymExists(
             String acronym,
-            TorneioApp.Team ignoredTeam
+            Equipa ignoredTeam
     ) {
         return teams.stream()
                 .anyMatch(team ->
                         team != ignoredTeam &&
-                        team.acronym.equalsIgnoreCase(acronym.trim())
+                                team.acronym.equalsIgnoreCase(acronym.trim())
                 );
     }
 
     public boolean playerNumberExists(
-            TorneioApp.Team team,
+            Equipa team,
             int number,
-            TorneioApp.Player ignoredPlayer
+            Jogador ignoredPlayer
     ) {
         if (team == null) {
             return false;
@@ -127,24 +128,23 @@ public class Store {
         return team.players.stream()
                 .anyMatch(player ->
                         player != ignoredPlayer &&
-                        player.number == number
+                                player.number == number
                 );
     }
 
     // =========================================================
     // ESTATÍSTICAS DOS JOGADORES POR JOGO
-    // Mantido para não remover nem quebrar o código anterior.
     // =========================================================
 
     public EstatisticaJogadorJogo findOrCreatePlayerGameStats(
-            TorneioApp.Game game,
-            TorneioApp.Team team,
-            TorneioApp.Player player
+            Jogo game,
+            Equipa team,
+            Jogador player
     ) {
         EstatisticaJogadorJogo existingStat = playerGameStats.stream()
                 .filter(stat ->
                         stat.game == game &&
-                        stat.player == player
+                                stat.player == player
                 )
                 .findFirst()
                 .orElse(null);
@@ -161,7 +161,7 @@ public class Store {
     }
 
     public List<EstatisticaJogadorJogo> findPlayerStatsByGame(
-            TorneioApp.Game game
+            Jogo game
     ) {
         List<EstatisticaJogadorJogo> result = new ArrayList<>();
 
@@ -175,7 +175,7 @@ public class Store {
     }
 
     public List<EstatisticaJogadorJogo> findPlayerStats(
-            TorneioApp.Player player
+            Jogador player
     ) {
         List<EstatisticaJogadorJogo> result = new ArrayList<>();
 
@@ -188,11 +188,11 @@ public class Store {
         return result;
     }
 
-    public void removePlayerGameStats(TorneioApp.Player player) {
+    public void removePlayerGameStats(Jogador player) {
         playerGameStats.removeIf(stat -> stat.player == player);
     }
 
-    public void removeGameStats(TorneioApp.Game game) {
+    public void removeGameStats(Jogo game) {
         playerGameStats.removeIf(stat -> stat.game == game);
     }
 
@@ -210,7 +210,7 @@ public class Store {
     }
 
     public List<EventoJogo> findEventsByGame(
-            TorneioApp.Game game
+            Jogo game
     ) {
         List<EventoJogo> result = new ArrayList<>();
 
@@ -228,23 +228,16 @@ public class Store {
         return result;
     }
 
-    public void removeEventsByGame(TorneioApp.Game game) {
+    public void removeEventsByGame(Jogo game) {
         gameEvents.removeIf(event -> event.game == game);
         recalculateGameTotals(game);
     }
 
-    public void removePlayerEvents(TorneioApp.Player player) {
+    public void removePlayerEvents(Jogador player) {
         gameEvents.removeIf(event -> event.player == player);
     }
 
-    /*
-     * Atualiza os totais apresentados na dashboard.
-     *
-     * Se o jogo já tiver acontecimentos no novo modelo, os totais são
-     * calculados através de gameEvents. Caso contrário, continua a usar
-     * EstatisticaJogadorJogo, mantendo a compatibilidade com o código antigo.
-     */
-    public void recalculateGameTotals(TorneioApp.Game game) {
+    public void recalculateGameTotals(Jogo game) {
         if (game == null) {
             return;
         }
@@ -271,8 +264,8 @@ public class Store {
             for (EventoJogo event : gameEvents) {
                 if (
                         event.game != game ||
-                        event.team == null ||
-                        event.type == null
+                                event.team == null ||
+                                event.type == null
                 ) {
                     continue;
                 }
@@ -349,8 +342,8 @@ public class Store {
             return;
         }
 
-        TorneioApp.Team teamA = findTeamByName(game.teamA);
-        TorneioApp.Team teamB = findTeamByName(game.teamB);
+        Equipa teamA = findTeamByName(game.teamA);
+        Equipa teamB = findTeamByName(game.teamB);
 
         for (EstatisticaJogadorJogo stat : playerGameStats) {
             if (stat.game != game) {
@@ -375,7 +368,7 @@ public class Store {
 
     private void inicializarDadosMock() {
 
-        this.tournament = new TorneioApp.Tournament(
+        this.tournament = new Torneio(
                 "Torneio ESoft 2026",
                 "10/06/2026",
                 "30/06/2026",
@@ -461,104 +454,90 @@ public class Store {
         // 16 EQUIPAS
         // =====================================================
 
-        TorneioApp.Team benfica = new TorneioApp.Team(
+        Equipa benfica = new Equipa(
                 nextId(), "Benfica", "SLB", "Roger Schmidt",
                 "Vermelho", "Preto", "🦅"
         );
 
-        TorneioApp.Team porto = new TorneioApp.Team(
+        Equipa porto = new Equipa(
                 nextId(), "Porto", "FCP", "Sérgio Conceição",
                 "Azul", "Amarelo", "🐉"
         );
 
-        TorneioApp.Team sporting = new TorneioApp.Team(
+        Equipa sporting = new Equipa(
                 nextId(), "Sporting", "SCP", "Rúben Amorim",
                 "Verde", "Preto", "🦁"
         );
 
-        TorneioApp.Team braga = new TorneioApp.Team(
+        Equipa braga = new Equipa(
                 nextId(), "Sp. Braga", "SCB", "Artur Jorge",
                 "Vermelho", "Branco", "⚔️"
         );
 
-        TorneioApp.Team vitoria = new TorneioApp.Team(
+        Equipa vitoria = new Equipa(
                 nextId(), "Vitória SC", "VSC", "Álvaro Pacheco",
                 "Branco", "Preto", "🛡️"
         );
 
-        TorneioApp.Team boavista = new TorneioApp.Team(
+        Equipa boavista = new Equipa(
                 nextId(), "Boavista", "BFC", "Petit",
                 "Xadrez", "Preto", "🐆"
         );
 
-        TorneioApp.Team famalicao = new TorneioApp.Team(
+        Equipa famalicao = new Equipa(
                 nextId(), "Famalicão", "FCF", "João Pedro",
                 "Branco", "Azul", "⚽"
         );
 
-        TorneioApp.Team gilVicente = new TorneioApp.Team(
+        Equipa gilVicente = new Equipa(
                 nextId(), "Gil Vicente", "GVC", "Vítor Campelos",
                 "Vermelho", "Azul", "🐓"
         );
 
-        TorneioApp.Team arouca = new TorneioApp.Team(
+        Equipa arouca = new Equipa(
                 nextId(), "Arouca", "FCA", "Daniel Sousa",
                 "Amarelo", "Azul", "🟡"
         );
 
-        TorneioApp.Team rioAve = new TorneioApp.Team(
+        Equipa rioAve = new Equipa(
                 nextId(), "Rio Ave", "RAFC", "Luís Freire",
                 "Verde", "Branco", "⛵"
         );
 
-        TorneioApp.Team estoril = new TorneioApp.Team(
+        Equipa estoril = new Equipa(
                 nextId(), "Estoril Praia", "GDEP", "Vasco Seabra",
                 "Amarelo", "Azul", "🏖️"
         );
 
-        TorneioApp.Team farense = new TorneioApp.Team(
+        Equipa farense = new Equipa(
                 nextId(), "Farense", "SCF", "José Mota",
                 "Preto", "Branco", "🦁"
         );
 
-        TorneioApp.Team portimonense = new TorneioApp.Team(
+        Equipa portimonense = new Equipa(
                 nextId(), "Portimonense", "PSC", "Paulo Sérgio",
                 "Preto", "Amarelo", "🦅"
         );
 
-        TorneioApp.Team casaPia = new TorneioApp.Team(
+        Equipa casaPia = new Equipa(
                 nextId(), "Casa Pia", "CPAC", "Gonçalo Santos",
                 "Preto", "Branco", "🦆"
         );
 
-        TorneioApp.Team chaves = new TorneioApp.Team(
+        Equipa chaves = new Equipa(
                 nextId(), "GD Chaves", "GDC", "Moreno",
                 "Azul", "Grená", "⚔️"
         );
 
-        TorneioApp.Team moreirense = new TorneioApp.Team(
+        Equipa moreirense = new Equipa(
                 nextId(), "Moreirense", "MFC", "Rui Borges",
                 "Verde", "Branco", "🟢"
         );
 
         teams.addAll(
                 List.of(
-                        benfica,
-                        porto,
-                        sporting,
-                        braga,
-                        vitoria,
-                        boavista,
-                        famalicao,
-                        gilVicente,
-                        arouca,
-                        rioAve,
-                        estoril,
-                        farense,
-                        portimonense,
-                        casaPia,
-                        chaves,
-                        moreirense
+                        benfica, porto, sporting, braga, vitoria, boavista, famalicao, gilVicente,
+                        arouca, rioAve, estoril, farense, portimonense, casaPia, chaves, moreirense
                 )
         );
 
@@ -650,7 +629,7 @@ public class Store {
         // PREENCHER CADA EQUIPA ATÉ TER 24 JOGADORES
         // =====================================================
 
-        for (TorneioApp.Team team : teams) {
+        for (Equipa team : teams) {
             int playersMissing = 24 - team.players.size();
             int shirtNumber = 30;
 
@@ -700,182 +679,23 @@ public class Store {
                 )
         );
 
-        inicializarCalendarioTeste();
-    }
-
-    private void inicializarCalendarioTeste() {
+        // O torneio arranca preparado, mas ainda sem calendário nem jogos.
         games.clear();
         gameEvents.clear();
+        playerGameStats.clear();
 
-        List<List<TorneioApp.Team>> groups = List.of(
-                List.of(
-                        findTeamByName("Vitória SC"),
-                        findTeamByName("Benfica"),
-                        findTeamByName("Arouca"),
-                        findTeamByName("Farense")
-                ),
-                List.of(
-                        findTeamByName("Famalicão"),
-                        findTeamByName("Sporting"),
-                        findTeamByName("GD Chaves"),
-                        findTeamByName("Portimonense")
-                ),
-                List.of(
-                        findTeamByName("Porto"),
-                        findTeamByName("Gil Vicente"),
-                        findTeamByName("Boavista"),
-                        findTeamByName("Casa Pia")
-                ),
-                List.of(
-                        findTeamByName("Sp. Braga"),
-                        findTeamByName("Estoril Praia"),
-                        findTeamByName("Moreirense"),
-                        findTeamByName("Rio Ave")
-                )
-        );
-
-        java.time.format.DateTimeFormatter formatter =
-                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-        java.time.LocalDate startDate =
-                java.time.LocalDate.parse(
-                        tournament.startDate,
-                        formatter
-                );
-
-        int gameIndex = 0;
-        int totalGroupGames = 24;
-
-        for (List<TorneioApp.Team> group : groups) {
-            for (int first = 0; first < group.size(); first++) {
-                for (int second = first + 1; second < group.size(); second++) {
-                    TorneioApp.Team teamA = group.get(first);
-                    TorneioApp.Team teamB = group.get(second);
-
-                    Estadio stadium =
-                            stadiums.get(
-                                    gameIndex % stadiums.size()
-                            );
-
-                    String date =
-                            startDate
-                                    .plusDays(gameIndex / 2)
-                                    .format(formatter);
-
-                    String time =
-                            gameIndex % 2 == 0
-                                    ? "18:00"
-                                    : "20:30";
-
-                    TorneioApp.Game game =
-                            new TorneioApp.Game(
-                                    nextId(),
-                                    "Fase de Grupos",
-                                    teamA.name,
-                                    teamB.name,
-                                    date + " " + time,
-                                    stadium
-                            );
-
-                    boolean isLastGame =
-                            gameIndex == totalGroupGames - 1;
-
-                    if (isLastGame) {
-                        game.state =
-                                TorneioApp.GameState.AGENDADO;
-                    } else {
-                        game.state =
-                                TorneioApp.GameState.CONCLUIDO;
-
-                        int goalsA =
-                                (gameIndex % 3) + 1;
-
-                        int goalsB =
-                                gameIndex % 2;
-
-                        adicionarGolosMock(
-                                game,
-                                teamA,
-                                goalsA,
-                                10
-                        );
-
-                        adicionarGolosMock(
-                                game,
-                                teamB,
-                                goalsB,
-                                55
-                        );
-
-                        recalculateGameTotals(game);
-                    }
-
-                    games.add(game);
-                    gameIndex++;
-                }
-            }
-        }
-
-        calendarGenerated = true;
-        tournament.state = "em curso";
-
-        System.out.println(
-                "Calendário de teste carregado: " +
-                        games.size() +
-                        " jogos. Apenas o último está por disputar."
-        );
-    }
-
-    private void adicionarGolosMock(
-            TorneioApp.Game game,
-            TorneioApp.Team team,
-            int numberOfGoals,
-            int firstMinute
-    ) {
-        if (
-                game == null ||
-                team == null ||
-                team.players.isEmpty()
-        ) {
-            return;
-        }
-
-        TorneioApp.Player scorer =
-                team.players.get(
-                        Math.min(
-                                3,
-                                team.players.size() - 1
-                        )
-                );
-
-        for (int i = 0; i < numberOfGoals; i++) {
-            int minute =
-                    Math.min(
-                            firstMinute + i * 12,
-                            90
-                    );
-
-            gameEvents.add(
-                    new EventoJogo(
-                            nextId(),
-                            game,
-                            team,
-                            scorer,
-                            TipoEventoJogo.GOLO,
-                            minute
-                    )
-            );
-        }
+        calendarGenerated = false;
+        tournament.state = "em preparação";
     }
 
     private void adicionarJogador(
-            TorneioApp.Team team,
+            Equipa team,
             String name,
             int number,
             String position
     ) {
         team.players.add(
-                new TorneioApp.Player(
+                new Jogador(
                         nextId(),
                         name,
                         number,

@@ -2,9 +2,9 @@ public class EventoJogo {
 
     int id;
 
-    TorneioApp.Game game;
-    TorneioApp.Team team;
-    TorneioApp.Player player;
+    Jogo game;
+    Equipa team;
+    Jogador player;
 
     TipoEventoJogo type;
 
@@ -12,9 +12,9 @@ public class EventoJogo {
 
     public EventoJogo(
             int id,
-            TorneioApp.Game game,
-            TorneioApp.Team team,
-            TorneioApp.Player player,
+            Jogo game,
+            Equipa team,
+            Jogador player,
             TipoEventoJogo type,
             int minute
     ) {

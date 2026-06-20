@@ -48,13 +48,13 @@ public class EstadioTestCase {
         store.stadiums.add(estadio);
 
         // 2. SIMULAR QUE O TORNEIO JÁ COMEÇOU (Injetar um jogo EM_CURSO)
-        TorneioApp.Game jogoAoVivo = new TorneioApp.Game(10, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", estadio);
-        jogoAoVivo.state = TorneioApp.GameState.EM_CURSO; // <-- O Truque está aqui
+        Jogo jogoAoVivo = new Jogo(10, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", estadio);
+        jogoAoVivo.state = EstadoJogo.EM_CURSO; // <-- O Truque está aqui
         store.games.add(jogoAoVivo);
 
         // 3. Executar a mesma validação lógica que usas no teu "EstadioPainelControlador"
         boolean torneioComecou = store.games.stream().anyMatch(g ->
-                g.state == TorneioApp.GameState.EM_CURSO || g.state == TorneioApp.GameState.CONCLUIDO
+                g.state == EstadoJogo.EM_CURSO || g.state == EstadoJogo.CONCLUIDO
         );
 
         // 4. Mudar ou tentar criar dados neste estado tem de dar "Erro" (Lógica bloqueada)

@@ -91,7 +91,7 @@ public class PatrocinioTestCase {
     public void testBloquearCriacaoPatrocinioComJogoIniciado() {
         Estadio estadio = new Estadio(1, "Estádio da Luz", "Lisboa", 65000);
 
-        TorneioApp.Game jogo = new TorneioApp.Game(
+        Jogo jogo = new Jogo(
                 1,
                 "Fase de Grupos",
                 "Benfica",
@@ -100,12 +100,12 @@ public class PatrocinioTestCase {
                 estadio
         );
 
-        jogo.state = TorneioApp.GameState.EM_CURSO;
+        jogo.state = EstadoJogo.EM_CURSO;
         store.games.add(jogo);
 
         boolean torneioIniciado = store.games.stream().anyMatch(g ->
-                g.state == TorneioApp.GameState.EM_CURSO ||
-                        g.state == TorneioApp.GameState.CONCLUIDO
+                g.state == EstadoJogo.EM_CURSO ||
+                        g.state == EstadoJogo.CONCLUIDO
         );
 
         assertTrue(torneioIniciado);
@@ -115,7 +115,7 @@ public class PatrocinioTestCase {
     public void testBloquearEdicaoPatrocinioComTorneioIniciado() {
         Estadio estadio = new Estadio(1, "Estádio da Luz", "Lisboa", 65000);
 
-        TorneioApp.Game jogo = new TorneioApp.Game(
+        Jogo jogo = new Jogo(
                 1,
                 "Fase de Grupos",
                 "Benfica",
@@ -124,12 +124,12 @@ public class PatrocinioTestCase {
                 estadio
         );
 
-        jogo.state = TorneioApp.GameState.EM_CURSO;
+        jogo.state = EstadoJogo.EM_CURSO;
         store.games.add(jogo);
 
         boolean torneioIniciado = store.games.stream().anyMatch(g ->
-                g.state == TorneioApp.GameState.EM_CURSO ||
-                        g.state == TorneioApp.GameState.CONCLUIDO
+                g.state == EstadoJogo.EM_CURSO ||
+                        g.state == EstadoJogo.CONCLUIDO
         );
 
         assertTrue(torneioIniciado);
@@ -139,7 +139,7 @@ public class PatrocinioTestCase {
     public void testBloquearRemocaoPatrocinioComTorneioIniciado() {
         Estadio estadio = new Estadio(1, "Estádio da Luz", "Lisboa", 65000);
 
-        TorneioApp.Game jogo = new TorneioApp.Game(
+        Jogo jogo = new Jogo(
                 1,
                 "Fase de Grupos",
                 "Benfica",
@@ -148,12 +148,12 @@ public class PatrocinioTestCase {
                 estadio
         );
 
-        jogo.state = TorneioApp.GameState.CONCLUIDO;
+        jogo.state = EstadoJogo.CONCLUIDO;
         store.games.add(jogo);
 
         boolean torneioIniciado = store.games.stream().anyMatch(g ->
-                g.state == TorneioApp.GameState.EM_CURSO ||
-                        g.state == TorneioApp.GameState.CONCLUIDO
+                g.state == EstadoJogo.EM_CURSO ||
+                        g.state == EstadoJogo.CONCLUIDO
         );
 
         assertTrue(torneioIniciado);

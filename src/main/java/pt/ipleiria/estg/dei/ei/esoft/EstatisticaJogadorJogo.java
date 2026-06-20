@@ -1,17 +1,17 @@
 public class EstatisticaJogadorJogo {
 
-    TorneioApp.Game game;
-    TorneioApp.Team team;
-    TorneioApp.Player player;
+    Jogo game;
+    Equipa team;
+    Jogador player;
 
     int goals;
     int yellowCards;
     int redCards;
 
     public EstatisticaJogadorJogo(
-            TorneioApp.Game game,
-            TorneioApp.Team team,
-            TorneioApp.Player player
+            Jogo game,
+            Equipa team,
+            Jogador player
     ) {
         this.game = game;
         this.team = team;

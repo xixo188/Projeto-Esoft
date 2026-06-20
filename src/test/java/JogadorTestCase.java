@@ -9,14 +9,14 @@ public class JogadorTestCase {
 
     private Store store;
 
-    private TorneioApp.Team equipaA;
-    private TorneioApp.Team equipaB;
+    private Equipa equipaA;
+    private Equipa equipaB;
 
     @BeforeEach
     public void setUp() {
         store = Store.getInstance();
 
-        equipaA = new TorneioApp.Team(
+        equipaA = new Equipa(
                 store.nextId(),
                 "Equipa Jogadores A",
                 "EJA",
@@ -26,7 +26,7 @@ public class JogadorTestCase {
                 ""
         );
 
-        equipaB = new TorneioApp.Team(
+        equipaB = new Equipa(
                 store.nextId(),
                 "Equipa Jogadores B",
                 "EJB",
@@ -42,12 +42,12 @@ public class JogadorTestCase {
 
     @AfterEach
     public void tearDown() {
-        for (TorneioApp.Player jogador : equipaA.players) {
+        for (Jogador jogador : equipaA.players) {
             store.removePlayerEvents(jogador);
             store.removePlayerGameStats(jogador);
         }
 
-        for (TorneioApp.Player jogador : equipaB.players) {
+        for (Jogador jogador : equipaB.players) {
             store.removePlayerEvents(jogador);
             store.removePlayerGameStats(jogador);
         }
@@ -58,7 +58,7 @@ public class JogadorTestCase {
 
     @Test
     public void testAdicionarJogadorComSucesso() {
-        TorneioApp.Player jogador = new TorneioApp.Player(
+        Jogador jogador = new Jogador(
                 store.nextId(),
                 "Jogador Teste",
                 10,
@@ -108,8 +108,8 @@ public class JogadorTestCase {
 
     @Test
     public void testDetetarNumeroDuplicadoNaMesmaEquipa() {
-        TorneioApp.Player primeiroJogador =
-                new TorneioApp.Player(
+        Jogador primeiroJogador =
+                new Jogador(
                         store.nextId(),
                         "Primeiro Jogador",
                         7,
@@ -131,8 +131,8 @@ public class JogadorTestCase {
 
     @Test
     public void testPermitirMesmoNumeroEmEquipasDiferentes() {
-        TorneioApp.Player jogadorEquipaA =
-                new TorneioApp.Player(
+        Jogador jogadorEquipaA =
+                new Jogador(
                         store.nextId(),
                         "Jogador da Equipa A",
                         9,
@@ -151,8 +151,8 @@ public class JogadorTestCase {
                 "O número utilizado noutra equipa não deveria ser considerado duplicado."
         );
 
-        TorneioApp.Player jogadorEquipaB =
-                new TorneioApp.Player(
+        Jogador jogadorEquipaB =
+                new Jogador(
                         store.nextId(),
                         "Jogador da Equipa B",
                         9,
@@ -183,8 +183,8 @@ public class JogadorTestCase {
 
     @Test
     public void testIgnorarProprioJogadorDuranteEdicao() {
-        TorneioApp.Player jogador =
-                new TorneioApp.Player(
+        Jogador jogador =
+                new Jogador(
                         store.nextId(),
                         "Jogador em Edição",
                         21,
@@ -206,8 +206,8 @@ public class JogadorTestCase {
 
     @Test
     public void testDetetarNumeroDeOutroJogadorDuranteEdicao() {
-        TorneioApp.Player jogadorExistente =
-                new TorneioApp.Player(
+        Jogador jogadorExistente =
+                new Jogador(
                         store.nextId(),
                         "Jogador Existente",
                         15,
@@ -215,8 +215,8 @@ public class JogadorTestCase {
                         ""
                 );
 
-        TorneioApp.Player jogadorEmEdicao =
-                new TorneioApp.Player(
+        Jogador jogadorEmEdicao =
+                new Jogador(
                         store.nextId(),
                         "Jogador em Edição",
                         20,
@@ -239,8 +239,8 @@ public class JogadorTestCase {
 
     @Test
     public void testRemoverJogadorComSucesso() {
-        TorneioApp.Player jogador =
-                new TorneioApp.Player(
+        Jogador jogador =
+                new Jogador(
                         store.nextId(),
                         "Jogador para Remover",
                         30,

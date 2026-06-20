@@ -11,19 +11,19 @@ public class EventoJogoTestCase {
 
     private Store store;
 
-    private TorneioApp.Team equipaA;
-    private TorneioApp.Team equipaB;
+    private Equipa equipaA;
+    private Equipa equipaB;
 
-    private TorneioApp.Player jogadorA;
-    private TorneioApp.Player jogadorB;
+    private Jogador jogadorA;
+    private Jogador jogadorB;
 
-    private TorneioApp.Game jogo;
+    private Jogo jogo;
 
     @BeforeEach
     public void setUp() {
         store = Store.getInstance();
 
-        equipaA = new TorneioApp.Team(
+        equipaA = new Equipa(
                 store.nextId(),
                 "Equipa Evento A",
                 "EEA",
@@ -33,7 +33,7 @@ public class EventoJogoTestCase {
                 ""
         );
 
-        equipaB = new TorneioApp.Team(
+        equipaB = new Equipa(
                 store.nextId(),
                 "Equipa Evento B",
                 "EEB",
@@ -43,7 +43,7 @@ public class EventoJogoTestCase {
                 ""
         );
 
-        jogadorA = new TorneioApp.Player(
+        jogadorA = new Jogador(
                 store.nextId(),
                 "Jogador A",
                 10,
@@ -51,7 +51,7 @@ public class EventoJogoTestCase {
                 ""
         );
 
-        jogadorB = new TorneioApp.Player(
+        jogadorB = new Jogador(
                 store.nextId(),
                 "Jogador B",
                 9,
@@ -72,7 +72,7 @@ public class EventoJogoTestCase {
                 10000
         );
 
-        jogo = new TorneioApp.Game(
+        jogo = new Jogo(
                 store.nextId(),
                 "Fase de Grupos",
                 equipaA.name,
@@ -82,7 +82,7 @@ public class EventoJogoTestCase {
         );
 
         jogo.state =
-                TorneioApp.GameState.EM_CURSO;
+                EstadoJogo.EM_CURSO;
 
         store.games.add(jogo);
     }

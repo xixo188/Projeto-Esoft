@@ -8,7 +8,7 @@ public class EquipaTestCase {
 
 
     private Store store;
-    private TorneioApp.Team equipaCriada;
+    private Equipa equipaCriada;
 
     @BeforeEach
     public void setUp() {
@@ -27,7 +27,7 @@ public class EquipaTestCase {
     public void testCriarEquipaComSucesso() {
         int numeroEquipasAntes = store.teams.size();
 
-        equipaCriada = new TorneioApp.Team(
+        equipaCriada = new Equipa(
                 store.nextId(),
                 "Equipa Teste",
                 "ETU",
@@ -79,7 +79,7 @@ public class EquipaTestCase {
 
     @Test
     public void testDetetarNomeDeEquipaDuplicado() {
-        equipaCriada = new TorneioApp.Team(
+        equipaCriada = new Equipa(
                 store.nextId(),
                 "Equipa Duplicada",
                 "EDP",
@@ -102,7 +102,7 @@ public class EquipaTestCase {
 
     @Test
     public void testDetetarSiglaDeEquipaDuplicada() {
-        equipaCriada = new TorneioApp.Team(
+        equipaCriada = new Equipa(
                 store.nextId(),
                 "Equipa da Sigla",
                 "EDS",
@@ -125,7 +125,7 @@ public class EquipaTestCase {
 
     @Test
     public void testIgnorarPropriaEquipaDuranteEdicao() {
-        equipaCriada = new TorneioApp.Team(
+        equipaCriada = new Equipa(
                 store.nextId(),
                 "Equipa Editada",
                 "EED",
@@ -156,7 +156,7 @@ public class EquipaTestCase {
 
     @Test
     public void testRemoverEquipaComSucesso() {
-        equipaCriada = new TorneioApp.Team(
+        equipaCriada = new Equipa(
                 store.nextId(),
                 "Equipa para Remover",
                 "EPR",

@@ -49,7 +49,7 @@ public class Faturacao {
             p.add(empty, BorderLayout.CENTER);
         } else {
             DefaultTableModel model = new DefaultTableModel(new String[]{"Jogo", "Data", "Estádio", "Bilhetes vendidos", "Receita"}, 0);
-            for (TorneioApp.TicketBatch tb : store.tickets) {
+            for (LoteBilhetes tb : store.tickets) {
                 if (tb.sold > 0) {
                     model.addRow(new Object[]{
                             tb.game.teamA + " x " + tb.game.teamB,

@@ -7,9 +7,9 @@ public class FaturacaoTestCase {
     public void testCalculoFaturacaoBilhetes() {
         Estadio luz = new Estadio(1, "Luz", "Lisboa", 65000);
         Bancada b = new Bancada(1, "Sagres", 30000);
-        TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", luz);
+        Jogo jogo = new Jogo(1, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", luz);
 
-        TorneioApp.TicketBatch lote = new TorneioApp.TicketBatch(1, jogo, b, 15.00, 500);
+        LoteBilhetes lote = new LoteBilhetes(1, jogo, b, 15.00, 500);
 
         // Vender 10 bilhetes
         lote.sold = 10;
@@ -21,7 +21,7 @@ public class FaturacaoTestCase {
     public void testNaoPermitirLoteMaiorQueLotacaoDaBancada() {
         Estadio luz = new Estadio(1, "Luz", "Lisboa", 65000);
         Bancada bancada = new Bancada(1, "Sagres", 30000); // Cabem 30.000 pessoas
-        TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06", luz);
+        Jogo jogo = new Jogo(1, "Fase de Grupos", "Benfica", "Porto", "10/06", luz);
 
         // O utilizador tenta criar um lote com 35.000 bilhetes!
         int bilhetesTentativa = 35000;

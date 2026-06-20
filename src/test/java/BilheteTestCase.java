@@ -8,7 +8,7 @@ public class BilheteTestCase {
         Estadio estadio = new Estadio(1, "Estádio da Luz", "Lisboa", 65000);
         Bancada bancada = new Bancada(1, "Bancada Sagres", 30000);
 
-        TorneioApp.Game jogo = new TorneioApp.Game(
+        Jogo jogo = new Jogo(
                 1,
                 "Fase de Grupos",
                 "Benfica",
@@ -17,7 +17,7 @@ public class BilheteTestCase {
                 estadio
         );
 
-        TorneioApp.TicketBatch bilhete = new TorneioApp.TicketBatch(
+        LoteBilhetes bilhete = new LoteBilhetes(
                 1,
                 jogo,
                 bancada,
@@ -37,7 +37,7 @@ public class BilheteTestCase {
         Estadio estadio = new Estadio(1, "Estádio da Luz", "Lisboa", 65000);
         Bancada bancada = new Bancada(1, "Bancada Sagres", 30000);
 
-        TorneioApp.Game jogo = new TorneioApp.Game(
+        Jogo jogo = new Jogo(
                 1,
                 "Fase de Grupos",
                 "Benfica",
@@ -46,7 +46,7 @@ public class BilheteTestCase {
                 estadio
         );
 
-        TorneioApp.TicketBatch bilhete = new TorneioApp.TicketBatch(
+        LoteBilhetes bilhete = new LoteBilhetes(
                 1,
                 jogo,
                 bancada,
@@ -64,7 +64,7 @@ public class BilheteTestCase {
         Estadio estadio = new Estadio(1, "Estádio da Luz", "Lisboa", 65000);
         Bancada bancada = new Bancada(1, "Bancada Sagres", 30000);
 
-        TorneioApp.Game jogo = new TorneioApp.Game(
+        Jogo jogo = new Jogo(
                 1,
                 "Fase de Grupos",
                 "Benfica",
@@ -73,7 +73,7 @@ public class BilheteTestCase {
                 estadio
         );
 
-        TorneioApp.TicketBatch bilhete = new TorneioApp.TicketBatch(
+        LoteBilhetes bilhete = new LoteBilhetes(
                 1,
                 jogo,
                 bancada,
@@ -106,7 +106,7 @@ public class BilheteTestCase {
         Estadio estadio = new Estadio(1, "Estádio da Luz", "Lisboa", 65000);
         Bancada bancada = new Bancada(1, "Bancada Sagres", 30000);
 
-        TorneioApp.Game jogo = new TorneioApp.Game(
+        Jogo jogo = new Jogo(
                 1,
                 "Fase de Grupos",
                 "Benfica",
@@ -115,7 +115,7 @@ public class BilheteTestCase {
                 estadio
         );
 
-        TorneioApp.TicketBatch bilhete = new TorneioApp.TicketBatch(
+        LoteBilhetes bilhete = new LoteBilhetes(
                 1,
                 jogo,
                 bancada,

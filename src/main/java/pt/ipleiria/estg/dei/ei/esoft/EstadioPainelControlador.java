@@ -299,7 +299,7 @@ public class EstadioPainelControlador {
 
     private static boolean isTournamentStarted(Store store) {
         return store.games.stream().anyMatch(g ->
-                g.state == TorneioApp.GameState.EM_CURSO || g.state == TorneioApp.GameState.CONCLUIDO
+                g.state == EstadoJogo.EM_CURSO || g.state == EstadoJogo.CONCLUIDO
         );
     }
 

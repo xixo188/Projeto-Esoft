@@ -26,8 +26,8 @@ public class Estatisticas {
 
         List<LinhaEstatistica> linhas = new ArrayList<>();
 
-        for (TorneioApp.Team team : store.teams) {
-            for (TorneioApp.Player player : team.players) {
+        for (Equipa team : store.teams) {
+            for (Jogador player : team.players) {
                 int gm = calcularGolosMarcados(store, player);
                 int ca = calcularCartoesAmarelos(store, player);
                 int cv = calcularCartoesVermelhos(store, player);
@@ -83,7 +83,7 @@ public class Estatisticas {
         app.setPage("Estatísticas gerais", p);
     }
 
-    private static int calcularGolosMarcados(Store store, TorneioApp.Player player) {
+    private static int calcularGolosMarcados(Store store, Jogador player) {
         int total = 0;
 
         for (EventoJogo evento : store.gameEvents) {
@@ -101,7 +101,7 @@ public class Estatisticas {
         return total;
     }
 
-    private static int calcularCartoesAmarelos(Store store, TorneioApp.Player player) {
+    private static int calcularCartoesAmarelos(Store store, Jogador player) {
         int total = 0;
 
         for (EventoJogo evento : store.gameEvents) {
@@ -119,7 +119,7 @@ public class Estatisticas {
         return total;
     }
 
-    private static int calcularCartoesVermelhos(Store store, TorneioApp.Player player) {
+    private static int calcularCartoesVermelhos(Store store, Jogador player) {
         int total = 0;
 
         for (EventoJogo evento : store.gameEvents) {
@@ -137,7 +137,7 @@ public class Estatisticas {
         return total;
     }
 
-    private static boolean existeEventoParaJogo(Store store, TorneioApp.Game game) {
+    private static boolean existeEventoParaJogo(Store store, Jogo game) {
         for (EventoJogo evento : store.gameEvents) {
             if (evento.game == game) {
                 return true;

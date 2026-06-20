@@ -45,7 +45,7 @@ public class TorneioPainelControlador {
             TorneioApp app,
             Store store
     ) {
-        TorneioApp.Tournament tournament = store.tournament;
+        Torneio tournament = store.tournament;
 
         if (tournament == null) {
             showTorneioPage(app, store);
@@ -111,7 +111,7 @@ public class TorneioPainelControlador {
             TorneioApp app,
             Store store
     ) {
-        TorneioApp.Tournament tournament = store.tournament;
+        Torneio tournament = store.tournament;
 
         if (tournament == null) {
             showTournamentCreateForm(app, store);
@@ -284,7 +284,7 @@ public class TorneioPainelControlador {
                 return;
             }
 
-            store.tournament = new TorneioApp.Tournament(
+            store.tournament = new Torneio(
                     name,
                     start,
                     end,

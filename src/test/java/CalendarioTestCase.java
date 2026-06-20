@@ -15,16 +15,16 @@ public class CalendarioTestCase {
     @Test
     public void testProibirGerarCalendarioComJogoEmCurso() {
         Estadio est = new Estadio(1, "Luz", "Lisboa", 50000);
-        TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", est);
+        Jogo jogo = new Jogo(1, "Fase de Grupos", "Benfica", "Porto", "10/06 18:00", est);
 
         // Jogo começa!
-        jogo.state = TorneioApp.GameState.EM_CURSO;
+        jogo.state = EstadoJogo.EM_CURSO;
         store.games.add(jogo);
 
         // Simulação exata da proteção que colocámos no topo do teu "generateCalendar()"
         boolean erroDetetado = false;
-        for (TorneioApp.Game g : store.games) {
-            if (g.state == TorneioApp.GameState.EM_CURSO || g.state == TorneioApp.GameState.CONCLUIDO) {
+        for (Jogo g : store.games) {
+            if (g.state == EstadoJogo.EM_CURSO || g.state == EstadoJogo.CONCLUIDO) {
                 erroDetetado = true;
                 break;
             }
@@ -35,8 +35,8 @@ public class CalendarioTestCase {
     @Test
     public void testCalculoDePontosDaFaseDeGrupos() {
         // Criar um jogo concluído com o resultado Benfica 2 - 1 Porto
-        TorneioApp.Game jogo = new TorneioApp.Game(1, "Fase de Grupos", "Benfica", "Porto", "10/06", new Estadio(1, "Luz", "Lx", 50000));
-        jogo.state = TorneioApp.GameState.CONCLUIDO;
+        Jogo jogo = new Jogo(1, "Fase de Grupos", "Benfica", "Porto", "10/06", new Estadio(1, "Luz", "Lx", 50000));
+        jogo.state = EstadoJogo.CONCLUIDO;
         jogo.goalsA = 2; // Benfica marca 2
         jogo.goalsB = 1; // Porto marca 1
 
