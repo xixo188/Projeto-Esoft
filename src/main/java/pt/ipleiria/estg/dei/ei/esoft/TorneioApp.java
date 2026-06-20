@@ -4,6 +4,11 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 public class TorneioApp extends JFrame {
 
     public final Store store = Store.getInstance();
@@ -362,52 +367,434 @@ public class TorneioApp extends JFrame {
     }
 
     public void apurarFaseEliminacao() {
-        boolean todosConcluidos = store.games.stream()
-                .filter(g -> g.phase.equals("Fase de Grupos"))
-                .allMatch(g -> g.state == GameState.CONCLUIDO);
+        List<Game> jogosGrupos = store.games.stream()
+                .filter(game -> "Fase de Grupos".equals(game.phase))
+                .toList();
 
-        if (!todosConcluidos) {
-            error("Ainda existem jogos da Fase de Grupos por concluir! As equipas só podem avançar no fim.");
+        if (jogosGrupos.isEmpty()) {
+            error("Não existem jogos da fase de grupos.");
             return;
         }
 
-        // 1. Calcula Pontos
-        java.util.Map<String, Integer> pontos = new java.util.HashMap<>();
-        for (Team t : store.teams) pontos.put(t.name, 0);
+        boolean todosConcluidos = jogosGrupos.stream()
+                .allMatch(game -> game.state == GameState.CONCLUIDO);
 
-        for (Game g : store.games) {
-            if (g.phase.equals("Fase de Grupos") && g.state == GameState.CONCLUIDO) {
-                if (g.goalsA > g.goalsB) pontos.put(g.teamA, pontos.get(g.teamA) + 3);
-                else if (g.goalsB > g.goalsA) pontos.put(g.teamB, pontos.get(g.teamB) + 3);
-                else {
-                    pontos.put(g.teamA, pontos.get(g.teamA) + 1);
-                    pontos.put(g.teamB, pontos.get(g.teamB) + 1);
+        if (!todosConcluidos) {
+            error(
+                    "Todos os jogos da fase de grupos têm de estar concluídos " +
+                            "antes de apurar a fase de eliminação."
+            );
+            return;
+        }
+
+        boolean eliminatoriasJaCriadas = store.games.stream()
+                .anyMatch(game ->
+                        "Quartos de Final".equals(game.phase) ||
+                                "Semifinais".equals(game.phase) ||
+                                "Final".equals(game.phase)
+                );
+
+        if (eliminatoriasJaCriadas) {
+            info("A fase de eliminação já foi criada.");
+            atualizarFaseEliminacao();
+            return;
+        }
+
+        if (store.stadiums.isEmpty()) {
+            error("É necessário existir pelo menos um estádio.");
+            return;
+        }
+
+        List<Team> equipasApuradas = new ArrayList<>();
+
+        int numeroGrupos =
+                (int) Math.ceil((double) store.teams.size() / 4);
+
+        for (int grupoIndex = 0; grupoIndex < numeroGrupos; grupoIndex++) {
+            int inicio = grupoIndex * 4;
+            int fim = Math.min(inicio + 4, store.teams.size());
+
+            if (fim - inicio < 2) {
+                continue;
+            }
+
+            List<Team> equipasGrupo =
+                    new ArrayList<>(
+                            store.teams.subList(inicio, fim)
+                    );
+
+            equipasGrupo.sort((equipa1, equipa2) -> {
+                int comparacaoPontos = Integer.compare(
+                        calcularPontosEquipa(equipa2),
+                        calcularPontosEquipa(equipa1)
+                );
+
+                if (comparacaoPontos != 0) {
+                    return comparacaoPontos;
+                }
+
+                int comparacaoDiferenca = Integer.compare(
+                        calcularDiferencaGolos(equipa2),
+                        calcularDiferencaGolos(equipa1)
+                );
+
+                if (comparacaoDiferenca != 0) {
+                    return comparacaoDiferenca;
+                }
+
+                int comparacaoGolos = Integer.compare(
+                        calcularGolosMarcados(equipa2),
+                        calcularGolosMarcados(equipa1)
+                );
+
+                if (comparacaoGolos != 0) {
+                    return comparacaoGolos;
+                }
+
+                return equipa1.name.compareToIgnoreCase(
+                        equipa2.name
+                );
+            });
+
+            equipasApuradas.add(equipasGrupo.get(0));
+            equipasApuradas.add(equipasGrupo.get(1));
+        }
+
+        if (equipasApuradas.size() != 8) {
+            error(
+                    "Não foi possível obter as oito equipas necessárias " +
+                            "para os quartos de final."
+            );
+            return;
+        }
+
+        Collections.shuffle(equipasApuradas);
+
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        LocalDate dataFinal;
+
+        try {
+            dataFinal = LocalDate.parse(
+                    store.tournament.endDate,
+                    formatter
+            );
+        } catch (Exception exception) {
+            error("A data final do torneio é inválida.");
+            return;
+        }
+
+        int descanso = Math.max(
+                2,
+                store.tournament.restDays
+        );
+
+        LocalDate dataSemifinais =
+                dataFinal.minusDays(descanso + 2L);
+
+        LocalDate primeiraDataQuartos =
+                dataSemifinais.minusDays(descanso + 1L);
+
+        LocalDate segundaDataQuartos =
+                primeiraDataQuartos.plusDays(1);
+
+        Estadio estadioFinal = store.stadiums.stream()
+                .max(Comparator.comparingInt(
+                        estadio -> estadio.capacidade
+                ))
+                .orElse(store.stadiums.get(0));
+
+        for (int i = 0; i < 4; i++) {
+            Team equipaA = equipasApuradas.get(i * 2);
+            Team equipaB = equipasApuradas.get(i * 2 + 1);
+
+            LocalDate dataJogo =
+                    i < 2
+                            ? primeiraDataQuartos
+                            : segundaDataQuartos;
+
+            String hora =
+                    i % 2 == 0
+                            ? "18:00"
+                            : "20:30";
+
+            Estadio estadio =
+                    store.stadiums.get(
+                            i % store.stadiums.size()
+                    );
+
+            Game quarto = new Game(
+                    store.nextId(),
+                    "Quartos de Final",
+                    equipaA.name,
+                    equipaB.name,
+                    dataJogo.format(formatter) + " " + hora,
+                    estadio
+            );
+
+            quarto.state = GameState.AGENDADO;
+
+            store.games.add(quarto);
+        }
+
+        Game semifinal1 = new Game(
+                store.nextId(),
+                "Semifinais",
+                "A determinar",
+                "A determinar",
+                dataSemifinais.format(formatter) + " 18:00",
+                store.stadiums.get(0)
+        );
+
+        semifinal1.state = GameState.AGENDADO;
+
+        Game semifinal2 = new Game(
+                store.nextId(),
+                "Semifinais",
+                "A determinar",
+                "A determinar",
+                dataSemifinais.format(formatter) + " 20:30",
+                store.stadiums.get(
+                        Math.min(1, store.stadiums.size() - 1)
+                )
+        );
+
+        semifinal2.state = GameState.AGENDADO;
+
+        Game finalGame = new Game(
+                store.nextId(),
+                "Final",
+                "A determinar",
+                "A determinar",
+                dataFinal.format(formatter) + " 20:00",
+                estadioFinal
+        );
+
+        finalGame.state = GameState.AGENDADO;
+
+        store.games.add(semifinal1);
+        store.games.add(semifinal2);
+        store.games.add(finalGame);
+
+        info(
+                "Fase de eliminação criada com sucesso.\n" +
+                        "As datas e os estádios dos quartos de final, " +
+                        "semifinais e final já estão definidos."
+        );
+
+    }
+
+    public void atualizarFaseEliminacao() {
+        List<Game> quartos = store.games.stream()
+                .filter(game ->
+                        "Quartos de Final".equals(game.phase)
+                )
+                .toList();
+
+        List<Game> semifinais = store.games.stream()
+                .filter(game ->
+                        "Semifinais".equals(game.phase)
+                )
+                .toList();
+
+        Game finalGame = store.games.stream()
+                .filter(game ->
+                        "Final".equals(game.phase)
+                )
+                .findFirst()
+                .orElse(null);
+
+        if (
+                quartos.size() == 4 &&
+                        semifinais.size() == 2 &&
+                        quartos.stream().allMatch(game ->
+                                game.state == GameState.CONCLUIDO
+                        )
+        ) {
+            Team vencedorQuarto1 =
+                    obterVencedor(quartos.get(0));
+
+            Team vencedorQuarto2 =
+                    obterVencedor(quartos.get(1));
+
+            Team vencedorQuarto3 =
+                    obterVencedor(quartos.get(2));
+
+            Team vencedorQuarto4 =
+                    obterVencedor(quartos.get(3));
+
+            if (
+                    vencedorQuarto1 != null &&
+                            vencedorQuarto2 != null
+            ) {
+                semifinais.get(0).teamA =
+                        vencedorQuarto1.name;
+
+                semifinais.get(0).teamB =
+                        vencedorQuarto2.name;
+            }
+
+            if (
+                    vencedorQuarto3 != null &&
+                            vencedorQuarto4 != null
+            ) {
+                semifinais.get(1).teamA =
+                        vencedorQuarto3.name;
+
+                semifinais.get(1).teamB =
+                        vencedorQuarto4.name;
+            }
+        }
+
+        if (
+                semifinais.size() == 2 &&
+                        finalGame != null &&
+                        semifinais.stream().allMatch(game ->
+                                game.state == GameState.CONCLUIDO
+                        )
+        ) {
+            Team vencedorSemifinal1 =
+                    obterVencedor(semifinais.get(0));
+
+            Team vencedorSemifinal2 =
+                    obterVencedor(semifinais.get(1));
+
+            if (
+                    vencedorSemifinal1 != null &&
+                            vencedorSemifinal2 != null
+            ) {
+                finalGame.teamA =
+                        vencedorSemifinal1.name;
+
+                finalGame.teamB =
+                        vencedorSemifinal2.name;
+            }
+        }
+
+        if (
+                finalGame != null &&
+                        finalGame.state == GameState.CONCLUIDO
+        ) {
+            Team vencedorFinal =
+                    obterVencedor(finalGame);
+
+            if (vencedorFinal != null) {
+                store.tournament.state = "concluído";
+
+                info(
+                        "Torneio concluído.\n" +
+                                "Vencedor: " +
+                                vencedorFinal.name
+                );
+            }
+        }
+
+    }
+
+    private Team obterVencedor(Game game) {
+        if (
+                game == null ||
+                        game.state != GameState.CONCLUIDO
+        ) {
+            return null;
+        }
+
+        if (game.goalsA == game.goalsB) {
+            return null;
+        }
+
+        String nomeVencedor =
+                game.goalsA > game.goalsB
+                        ? game.teamA
+                        : game.teamB;
+
+        return store.findTeamByName(nomeVencedor);
+
+    }
+
+    private int calcularPontosEquipa(Team equipa) {
+        int pontos = 0;
+
+        for (Game game : store.games) {
+            if (
+                    !"Fase de Grupos".equals(game.phase) ||
+                            game.state != GameState.CONCLUIDO
+            ) {
+                continue;
+            }
+
+            if (game.teamA.equals(equipa.name)) {
+                if (game.goalsA > game.goalsB) {
+                    pontos += 3;
+                } else if (game.goalsA == game.goalsB) {
+                    pontos++;
+                }
+            } else if (game.teamB.equals(equipa.name)) {
+                if (game.goalsB > game.goalsA) {
+                    pontos += 3;
+                } else if (game.goalsA == game.goalsB) {
+                    pontos++;
                 }
             }
         }
 
-        // 2. Organiza 1ºs e 2ºs lugares
-        java.util.List<Team> apurados = new java.util.ArrayList<>();
-        for (int i = 0; i < 4; i++) { // Percorre Grupos A, B, C, D
-            java.util.List<Team> grupo = new java.util.ArrayList<>(store.teams.subList(i * 4, i * 4 + 4));
-            grupo.sort((t1, t2) -> pontos.get(t2.name).compareTo(pontos.get(t1.name))); // Ordena por pontos
-            apurados.add(grupo.get(0)); // Adiciona 1º do grupo
-            apurados.add(grupo.get(1)); // Adiciona 2º do grupo
-        }
+        return pontos;
 
-        // 3. Preenche os jogos dos Quartos
-        java.util.List<Game> quartos = new java.util.ArrayList<>();
-        for (Game g : store.games) if (g.phase.equals("Quartos de Final")) quartos.add(g);
 
-        if (quartos.size() == 4) {
-            quartos.get(0).teamA = apurados.get(0).name; quartos.get(0).teamB = apurados.get(3).name; // 1ºA vs 2ºB
-            quartos.get(1).teamA = apurados.get(2).name; quartos.get(1).teamB = apurados.get(1).name; // 1ºB vs 2ºA
-            quartos.get(2).teamA = apurados.get(4).name; quartos.get(2).teamB = apurados.get(7).name; // 1ºC vs 2ºD
-            quartos.get(3).teamA = apurados.get(6).name; quartos.get(3).teamB = apurados.get(5).name; // 1ºD vs 2ºC
-
-            info("Fase de Eliminação gerada com sucesso! As 8 melhores equipas avançaram para os Quartos de Final.");
-        }
     }
+
+    private int calcularDiferencaGolos(Team equipa) {
+        int golosMarcados = 0;
+        int golosSofridos = 0;
+
+
+        for (Game game : store.games) {
+            if (
+                    !"Fase de Grupos".equals(game.phase) ||
+                            game.state != GameState.CONCLUIDO
+            ) {
+                continue;
+            }
+
+            if (game.teamA.equals(equipa.name)) {
+                golosMarcados += game.goalsA;
+                golosSofridos += game.goalsB;
+            } else if (game.teamB.equals(equipa.name)) {
+                golosMarcados += game.goalsB;
+                golosSofridos += game.goalsA;
+            }
+        }
+
+        return golosMarcados - golosSofridos;
+
+
+    }
+
+    private int calcularGolosMarcados(Team equipa) {
+        int golos = 0;
+
+
+        for (Game game : store.games) {
+            if (
+                    !"Fase de Grupos".equals(game.phase) ||
+                            game.state != GameState.CONCLUIDO
+            ) {
+                continue;
+            }
+
+            if (game.teamA.equals(equipa.name)) {
+                golos += game.goalsA;
+            } else if (game.teamB.equals(equipa.name)) {
+                golos += game.goalsB;
+            }
+        }
+
+        return golos;
+
+
+    }
+
 
     private String addDays(String date, int days) {
         try {
@@ -599,6 +986,7 @@ public class TorneioApp extends JFrame {
     }
 
     static class Game {
+
         int id;
 
         int goalsA = 0;
@@ -610,13 +998,13 @@ public class TorneioApp extends JFrame {
         int redA = 0;
         int redB = 0;
 
-        int possessionA = 0;
-
-        int cornersA = 0;
-        int cornersB = 0;
+        int possessionA = 50;
 
         int foulsA = 0;
         int foulsB = 0;
+
+        int cornersA = 0;
+        int cornersB = 0;
 
         int shotsA = 0;
         int shotsB = 0;

@@ -1,702 +1,1008 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class DadosJogoPainelControlador {
 
-    public static void showGameDetails(TorneioApp app, Store store, TorneioApp.Game game) {
-        JPanel panel = new JPanel(new BorderLayout(12, 12));
+    public static void showGameDetails(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game
+    ) {
+        store.recalculateGameTotals(game);
 
-        boolean jogoComEstatisticas =
-                game.state == TorneioApp.GameState.EM_CURSO ||
-                        game.state == TorneioApp.GameState.CONCLUIDO;
+        JPanel page = new JPanel(
+                new BorderLayout(12, 12)
+        );
 
-        int yellowA = jogoComEstatisticas ? game.yellowA : 0;
-        int yellowB = jogoComEstatisticas ? game.yellowB : 0;
-        int redA = jogoComEstatisticas ? game.redA : 0;
-        int redB = jogoComEstatisticas ? game.redB : 0;
-        int goalsA = jogoComEstatisticas ? game.goalsA : 0;
-        int goalsB = jogoComEstatisticas ? game.goalsB : 0;
-        int possessionA = jogoComEstatisticas ? game.possessionA : 0;
-        int possessionB = jogoComEstatisticas ? 100 - game.possessionA : 0;
-
-        JPanel dados = new JPanel(new GridBagLayout());
-        dados.setBackground(new Color(220, 220, 220));
-        dados.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        dados.setPreferredSize(new Dimension(800, 430));
-
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(4, 8, 4, 8);
-        c.fill = GridBagConstraints.HORIZONTAL;
-
-        JLabel equipaA = new JLabel(game.teamA, SwingConstants.CENTER);
-        JLabel equipaB = new JLabel(game.teamB, SwingConstants.CENTER);
-
-        equipaA.setFont(new Font("Arial", Font.BOLD, 24));
-        equipaB.setFont(new Font("Arial", Font.BOLD, 24));
-
-        JTextField data = campo(game.dateTime, 200);
-        JTextField estado = campo(game.state.toString(), 120);
-
-        JTextField amarelosA = campo(String.valueOf(yellowA), 115);
-        JTextField amarelosB = campo(String.valueOf(yellowB), 115);
-        JTextField vermelhosA = campo(String.valueOf(redA), 115);
-        JTextField vermelhosB = campo(String.valueOf(redB), 115);
-        JTextField posseA = campo(String.valueOf(possessionA), 115);
-        JTextField posseB = campo(String.valueOf(possessionB), 115);
-        JTextField golosA = campo(String.valueOf(goalsA), 115);
-        JTextField golosB = campo(String.valueOf(goalsB), 115);
-
-        c.gridx = 0; c.gridy = 0;
-        dados.add(new JLabel("img", SwingConstants.CENTER), c);
-
-        c.gridx = 1;
-        dados.add(new JLabel("Data", SwingConstants.CENTER), c);
-
-        c.gridx = 2;
-        dados.add(new JLabel("Estado", SwingConstants.CENTER), c);
-
-        c.gridx = 3;
-        dados.add(new JLabel("img", SwingConstants.CENTER), c);
-
-        c.gridx = 0; c.gridy = 1;
-        dados.add(equipaA, c);
-
-        c.gridx = 1;
-        dados.add(data, c);
-
-        c.gridx = 2;
-        dados.add(estado, c);
-
-        c.gridx = 3;
-        dados.add(equipaB, c);
-
-        c.gridx = 0; c.gridy = 2;
-        dados.add(new JLabel(game.teamA, SwingConstants.CENTER), c);
-
-        c.gridx = 1;
-        dados.add(new JLabel("vs", SwingConstants.CENTER), c);
-
-        c.gridx = 3;
-        dados.add(new JLabel(game.teamB, SwingConstants.CENTER), c);
-
-        c.gridx = 0; c.gridy = 3;
-        dados.add(amarelosA, c);
-
-        c.gridx = 1; c.gridwidth = 2;
-        dados.add(new JLabel("Cartão Amarelo", SwingConstants.CENTER), c);
-
-        c.gridx = 3; c.gridwidth = 1;
-        dados.add(amarelosB, c);
-
-        c.gridx = 0; c.gridy = 4;
-        dados.add(vermelhosA, c);
-
-        c.gridx = 1; c.gridwidth = 2;
-        dados.add(new JLabel("Cartão Vermelho", SwingConstants.CENTER), c);
-
-        c.gridx = 3; c.gridwidth = 1;
-        dados.add(vermelhosB, c);
-
-        c.gridx = 0; c.gridy = 5;
-        dados.add(posseA, c);
-
-        c.gridx = 1; c.gridwidth = 2;
-        dados.add(new JLabel("Posse de bola", SwingConstants.CENTER), c);
-
-        c.gridx = 3; c.gridwidth = 1;
-        dados.add(posseB, c);
-
-        c.gridx = 0; c.gridy = 6;
-        dados.add(golosA, c);
-
-        c.gridx = 1; c.gridwidth = 2;
-        dados.add(new JLabel("Golos", SwingConstants.CENTER), c);
-
-        c.gridx = 3; c.gridwidth = 1;
-        dados.add(golosB, c);
-
-        c.gridx = 0; c.gridy = 7; c.gridwidth = 4;
-        dados.add(new JLabel("Estádio: " + (game.stadium == null ? "" : game.stadium.nome)), c);
-
-        JPanel center = new JPanel(new GridBagLayout());
-        center.add(dados);
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttons = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT)
+        );
 
         JButton backButton = createButton("Voltar");
-        JButton cardsButton = createButton("Inserir Cartões");
-        JButton goalsButton = createButton("Inserir Golos");
-        JButton editDataButton = createButton("Editar Dados");
-
         buttons.add(backButton);
-        buttons.add(cardsButton);
-        buttons.add(goalsButton);
-        buttons.add(editDataButton);
 
-        backButton.addActionListener(e -> Calendario.showCalendario(app, store));
+        backButton.addActionListener(e ->
+                voltarAoCalendario(
+                        app,
+                        store,
+                        game
+                )
+        );
 
-        cardsButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) return;
-            showCardsForm(app, store, game);
-        });
+        if (
+                game.state == TorneioApp.GameState.AGENDADO ||
+                        game.state == TorneioApp.GameState.POR_AGENDAR
+        ) {
+            JButton startButton =
+                    createButton("Começar Jogo");
 
-        goalsButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) return;
-            showGoalsForm(app, store, game);
-        });
+            buttons.add(startButton);
 
-        editDataButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) return;
-            showGameDataForm(app, store, game);
-        });
+            boolean participantsDefined =
+                    participantsDefined(game);
 
-        panel.add(buttons, BorderLayout.NORTH);
-        panel.add(center, BorderLayout.CENTER);
+            startButton.setEnabled(
+                    participantsDefined
+            );
 
-        app.setPage("Dados jogo", panel);
+            if (!participantsDefined) {
+                startButton.setToolTipText(
+                        "Os participantes deste jogo ainda não estão definidos."
+                );
+            }
+
+            startButton.addActionListener(e ->
+                    startGame(app, store, game)
+            );
+        }
+
+        if (
+                game.state ==
+                        TorneioApp.GameState.EM_CURSO
+        ) {
+            JButton goalButton =
+                    createButton("Registar Golo");
+
+            JButton cardButton =
+                    createButton("Registar Cartão");
+
+            JButton eventButton =
+                    createButton("Registar Evento");
+
+            JButton possessionButton =
+                    createButton("Editar Posse");
+
+            JButton finishButton =
+                    createButton("Concluir Jogo");
+
+            buttons.add(goalButton);
+            buttons.add(cardButton);
+            buttons.add(eventButton);
+            buttons.add(possessionButton);
+            buttons.add(finishButton);
+
+            goalButton.addActionListener(e ->
+                    showGoalForm(app, store, game)
+            );
+
+            cardButton.addActionListener(e ->
+                    showCardForm(app, store, game)
+            );
+
+            eventButton.addActionListener(e ->
+                    showGeneralEventForm(
+                            app,
+                            store,
+                            game
+                    )
+            );
+
+            possessionButton.addActionListener(e ->
+                    showPossessionForm(
+                            app,
+                            store,
+                            game
+                    )
+            );
+
+            finishButton.addActionListener(e ->
+                    finishGame(app, store, game)
+            );
+        }
+
+        JPanel dashboard =
+                createDashboard(game);
+
+        DefaultTableModel eventModel =
+                new DefaultTableModel(
+                        new String[]{
+                                "Minuto",
+                                "Acontecimento",
+                                "Equipa",
+                                "Jogador"
+                        },
+                        0
+                ) {
+                    @Override
+                    public boolean isCellEditable(
+                            int row,
+                            int column
+                    ) {
+                        return false;
+                    }
+                };
+
+        List<EventoJogo> events =
+                store.findEventsByGame(game);
+
+        for (EventoJogo event : events) {
+            eventModel.addRow(new Object[]{
+                    event.minute + "'",
+                    event.type.toString(),
+                    event.team.name,
+                    event.playerName()
+            });
+        }
+
+        JTable eventsTable =
+                new JTable(eventModel);
+
+        eventsTable.setRowHeight(26);
+
+        JPanel center = new JPanel(
+                new BorderLayout(12, 12)
+        );
+
+        center.add(
+                dashboard,
+                BorderLayout.NORTH
+        );
+
+        if (events.isEmpty()) {
+            JLabel emptyLabel = new JLabel(
+                    "Ainda não existem acontecimentos registados.",
+                    SwingConstants.CENTER
+            );
+
+            emptyLabel.setFont(
+                    new Font(
+                            "Arial",
+                            Font.PLAIN,
+                            16
+                    )
+            );
+
+            center.add(
+                    emptyLabel,
+                    BorderLayout.CENTER
+            );
+        } else {
+            JScrollPane scrollPane =
+                    new JScrollPane(eventsTable);
+
+            scrollPane.setBorder(
+                    BorderFactory.createTitledBorder(
+                            "Histórico do jogo"
+                    )
+            );
+
+            center.add(
+                    scrollPane,
+                    BorderLayout.CENTER
+            );
+        }
+
+        page.add(
+                buttons,
+                BorderLayout.NORTH
+        );
+
+        page.add(
+                center,
+                BorderLayout.CENTER
+        );
+
+        app.setPage(
+                "Dados do jogo",
+                page
+        );
     }
 
-    private static JTextField campo(String valor, int largura) {
-        JTextField field = new JTextField(valor);
+    private static JPanel createDashboard(
+            TorneioApp.Game game
+    ) {
+        JPanel outer = new JPanel(
+                new BorderLayout(8, 8)
+        );
 
-        field.setEditable(false);
-        field.setHorizontalAlignment(JTextField.CENTER);
+        outer.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createTitledBorder(
+                                game.phase
+                        ),
+                        BorderFactory.createEmptyBorder(
+                                10,
+                                10,
+                                10,
+                                10
+                        )
+                )
+        );
 
-        field.setPreferredSize(new Dimension(largura, 30));
+        String stateText =
+                game.state.toString()
+                        .replace('_', ' ');
 
-        field.setFont(new Font("Arial", Font.PLAIN, 14));
+        JLabel gameInformation = new JLabel(
+                game.dateTime +
+                        "   |   " +
+                        stateText +
+                        "   |   Estádio: " +
+                        (
+                                game.stadium == null
+                                        ? "Não definido"
+                                        : game.stadium.nome
+                        ),
+                SwingConstants.CENTER
+        );
 
-        return field;
+        gameInformation.setFont(
+                new Font(
+                        "Arial",
+                        Font.PLAIN,
+                        14
+                )
+        );
+
+        JPanel statistics = new JPanel(
+                new GridLayout(0, 3, 8, 6)
+        );
+
+        statistics.add(new JLabel(""));
+
+        statistics.add(
+                centeredBoldLabel(game.teamA)
+        );
+
+        statistics.add(
+                centeredBoldLabel(game.teamB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Resultado",
+                String.valueOf(game.goalsA),
+                String.valueOf(game.goalsB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Cartões amarelos",
+                String.valueOf(game.yellowA),
+                String.valueOf(game.yellowB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Cartões vermelhos",
+                String.valueOf(game.redA),
+                String.valueOf(game.redB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Faltas",
+                String.valueOf(game.foulsA),
+                String.valueOf(game.foulsB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Cantos",
+                String.valueOf(game.cornersA),
+                String.valueOf(game.cornersB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Remates",
+                String.valueOf(game.shotsA),
+                String.valueOf(game.shotsB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Foras de jogo",
+                String.valueOf(game.offsidesA),
+                String.valueOf(game.offsidesB)
+        );
+
+        addStatisticRow(
+                statistics,
+                "Posse de bola",
+                game.possessionA + "%",
+                (100 - game.possessionA) + "%"
+        );
+
+        outer.add(
+                gameInformation,
+                BorderLayout.NORTH
+        );
+
+        outer.add(
+                statistics,
+                BorderLayout.CENTER
+        );
+
+        return outer;
     }
 
-    private static void showCardsForm(
+    private static void startGame(
             TorneioApp app,
             Store store,
             TorneioApp.Game game
     ) {
-        PlayerSelection selection =
-                createPlayerSelection(app, store, game);
+        if (!participantsDefined(game)) {
+            app.error(
+                    "Ainda não estão definidos os participantes deste jogo."
+            );
+            return;
+        }
+
+        if (
+                game.state !=
+                        TorneioApp.GameState.AGENDADO &&
+                game.state !=
+                        TorneioApp.GameState.POR_AGENDAR
+        ) {
+            app.error(
+                    "Este jogo não pode ser iniciado."
+            );
+            return;
+        }
+
+        game.state =
+                TorneioApp.GameState.EM_CURSO;
+
+        app.info(
+                "Jogo iniciado com sucesso."
+        );
+
+        showGameDetails(
+                app,
+                store,
+                game
+        );
+    }
+
+    private static void finishGame(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game
+    ) {
+        if (
+                game.state !=
+                        TorneioApp.GameState.EM_CURSO
+        ) {
+            app.error(
+                    "Apenas um jogo em curso pode ser concluído."
+            );
+            return;
+        }
+
+        store.recalculateGameTotals(game);
+
+        boolean knockoutGame =
+                isKnockoutGame(game);
+
+        if (
+                knockoutGame &&
+                game.goalsA == game.goalsB
+        ) {
+            app.error(
+                    "Um jogo da fase de eliminação não pode terminar empatado.\n" +
+                    "Regista o golo de desempate antes de concluir o jogo."
+            );
+            return;
+        }
+
+        int option =
+                JOptionPane.showConfirmDialog(
+                        app,
+                        "Pretende concluir este jogo?\n" +
+                                "Depois de concluído, já não será possível alterar os dados.",
+                        "Concluir Jogo",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+        if (option != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        game.state =
+                TorneioApp.GameState.CONCLUIDO;
+
+        Calendario.atualizarEliminatorias(
+                app,
+                store
+        );
+
+        app.info(
+                "Jogo concluído com sucesso."
+        );
+
+        if (knockoutGame) {
+            Calendario.showFaseEliminacao(
+                    app,
+                    store
+            );
+        } else {
+            showGameDetails(
+                    app,
+                    store,
+                    game
+            );
+        }
+    }
+
+    private static void showGoalForm(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game
+    ) {
+        TeamPlayerSelection selection =
+                createTeamPlayerSelection(
+                        app,
+                        store,
+                        game,
+                        false
+                );
 
         if (selection == null) {
             return;
         }
 
-        JTextField yellowField = new JTextField("0");
-        JTextField redField = new JTextField("0");
+        JTextField minuteField =
+                new JTextField();
 
-        JPanel form = createFormPanel();
-
-        addRow(form, "Equipa *", selection.teamCombo, 0);
-        addRow(form, "Jogador *", selection.playerCombo, 1);
-        addRow(form, "Cartões amarelos *", yellowField, 2);
-        addRow(form, "Cartões vermelhos *", redField, 3);
-
-        JPanel buttons = createButtonsPanel();
-
-        JButton cancelButton = createButton("Cancelar");
-        JButton confirmButton = createButton("Confirmar");
-
-        buttons.add(cancelButton);
-        buttons.add(confirmButton);
-
-        cancelButton.addActionListener(e ->
-                showGameDetails(app, store, game)
-        );
-
-        confirmButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) {
-                return;
-            }
-
-            TorneioApp.Team team =
-                    (TorneioApp.Team)
-                            selection.teamCombo.getSelectedItem();
-
-            TorneioApp.Player player =
-                    (TorneioApp.Player)
-                            selection.playerCombo.getSelectedItem();
-
-            if (team == null || player == null) {
-                app.error(
-                        "Seleciona uma equipa e um jogador."
-                );
-                return;
-            }
-
-            Integer yellowCards = parseNonNegative(
-                    app,
-                    yellowField.getText(),
-                    "O número de cartões amarelos é inválido."
-            );
-
-            Integer redCards = parseNonNegative(
-                    app,
-                    redField.getText(),
-                    "O número de cartões vermelhos é inválido."
-            );
-
-            if (yellowCards == null || redCards == null) {
-                return;
-            }
-
-            if (yellowCards == 0 && redCards == 0) {
-                app.error(
-                        "Insere pelo menos um cartão."
-                );
-                return;
-            }
-
-            EstatisticaJogadorJogo stat =
-                    store.findOrCreatePlayerGameStats(
-                            game,
-                            team,
-                            player
-                    );
-
-            stat.yellowCards += yellowCards;
-            stat.redCards += redCards;
-
-            store.recalculateGameTotals(game);
-
-            app.info("Cartões inseridos com sucesso.");
-
-            showGameDetails(app, store, game);
-        });
-
-        JPanel panel = new JPanel(new BorderLayout());
-
-        panel.add(form, BorderLayout.NORTH);
-        panel.add(buttons, BorderLayout.SOUTH);
-
-        app.setPage("Inserir Cartões", panel);
-    }
-
-    private static void showGoalsForm(
-            TorneioApp app,
-            Store store,
-            TorneioApp.Game game
-    ) {
-        PlayerSelection selection =
-                createPlayerSelection(app, store, game);
-
-        if (selection == null) {
-            return;
-        }
-
-        JTextField goalsField = new JTextField("0");
-
-        JPanel form = createFormPanel();
-
-        addRow(form, "Equipa *", selection.teamCombo, 0);
-        addRow(form, "Jogador *", selection.playerCombo, 1);
-        addRow(form, "Golos *", goalsField, 2);
-
-        JPanel buttons = createButtonsPanel();
-
-        JButton cancelButton = createButton("Cancelar");
-        JButton confirmButton = createButton("Confirmar");
-
-        buttons.add(cancelButton);
-        buttons.add(confirmButton);
-
-        cancelButton.addActionListener(e ->
-                showGameDetails(app, store, game)
-        );
-
-        confirmButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) {
-                return;
-            }
-
-            TorneioApp.Team team =
-                    (TorneioApp.Team)
-                            selection.teamCombo.getSelectedItem();
-
-            TorneioApp.Player player =
-                    (TorneioApp.Player)
-                            selection.playerCombo.getSelectedItem();
-
-            if (team == null || player == null) {
-                app.error(
-                        "Seleciona uma equipa e um jogador."
-                );
-                return;
-            }
-
-            Integer goals = parseNonNegative(
-                    app,
-                    goalsField.getText(),
-                    "O número de golos é inválido."
-            );
-
-            if (goals == null) {
-                return;
-            }
-
-            if (goals == 0) {
-                app.error(
-                        "O número de golos deve ser superior a zero."
-                );
-                return;
-            }
-
-            EstatisticaJogadorJogo stat =
-                    store.findOrCreatePlayerGameStats(
-                            game,
-                            team,
-                            player
-                    );
-
-            stat.goals += goals;
-
-            store.recalculateGameTotals(game);
-
-            app.info("Golos inseridos com sucesso.");
-
-            showGameDetails(app, store, game);
-        });
-
-        JPanel panel = new JPanel(new BorderLayout());
-
-        panel.add(form, BorderLayout.NORTH);
-        panel.add(buttons, BorderLayout.SOUTH);
-
-        app.setPage("Inserir Golos", panel);
-    }
-
-    private static void showGameDataForm(
-            TorneioApp app,
-            Store store,
-            TorneioApp.Game game
-    ) {
-        JTextField possessionAField =
-                new JTextField(
-                        String.valueOf(game.possessionA)
-                );
-
-        JTextField cornersAField =
-                new JTextField(
-                        String.valueOf(game.cornersA)
-                );
-
-        JTextField cornersBField =
-                new JTextField(
-                        String.valueOf(game.cornersB)
-                );
-
-        JTextField foulsAField =
-                new JTextField(
-                        String.valueOf(game.foulsA)
-                );
-
-        JTextField foulsBField =
-                new JTextField(
-                        String.valueOf(game.foulsB)
-                );
-
-        JTextField shotsAField =
-                new JTextField(
-                        String.valueOf(game.shotsA)
-                );
-
-        JTextField shotsBField =
-                new JTextField(
-                        String.valueOf(game.shotsB)
-                );
-
-        JTextField offsidesAField =
-                new JTextField(
-                        String.valueOf(game.offsidesA)
-                );
-
-        JTextField offsidesBField =
-                new JTextField(
-                        String.valueOf(game.offsidesB)
-                );
-
-        JPanel form = createFormPanel();
+        JPanel form =
+                createFormPanel();
 
         addRow(
                 form,
-                "Posse de bola de " + game.teamA + " (%) *",
-                possessionAField,
+                "Equipa *",
+                selection.teamCombo,
                 0
         );
 
         addRow(
                 form,
-                "Cantos de " + game.teamA + " *",
-                cornersAField,
+                "Jogador *",
+                selection.playerCombo,
                 1
         );
 
         addRow(
                 form,
-                "Cantos de " + game.teamB + " *",
-                cornersBField,
+                "Minuto *",
+                minuteField,
+                2
+        );
+
+        showEventFormPage(
+                app,
+                store,
+                game,
+                "Registar Golo",
+                form,
+                () -> {
+                    TorneioApp.Team team =
+                            selection.selectedTeam();
+
+                    TorneioApp.Player player =
+                            selection.selectedPlayer();
+
+                    Integer minute =
+                            parseMinute(
+                                    app,
+                                    minuteField.getText()
+                            );
+
+                    if (
+                            team == null ||
+                                    player == null ||
+                                    minute == null
+                    ) {
+                        if (
+                                team == null ||
+                                        player == null
+                        ) {
+                            app.error(
+                                    "Seleciona uma equipa e um jogador."
+                            );
+                        }
+
+                        return;
+                    }
+
+                    registerEvent(
+                            app,
+                            store,
+                            game,
+                            team,
+                            player,
+                            TipoEventoJogo.GOLO,
+                            minute
+                    );
+                }
+        );
+    }
+
+    private static void showCardForm(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game
+    ) {
+        TeamPlayerSelection selection =
+                createTeamPlayerSelection(
+                        app,
+                        store,
+                        game,
+                        false
+                );
+
+        if (selection == null) {
+            return;
+        }
+
+        JComboBox<TipoEventoJogo> cardTypeCombo =
+                new JComboBox<>(
+                        new TipoEventoJogo[]{
+                                TipoEventoJogo.CARTAO_AMARELO,
+                                TipoEventoJogo.CARTAO_VERMELHO
+                        }
+                );
+
+        JTextField minuteField =
+                new JTextField();
+
+        JPanel form =
+                createFormPanel();
+
+        addRow(
+                form,
+                "Equipa *",
+                selection.teamCombo,
+                0
+        );
+
+        addRow(
+                form,
+                "Jogador *",
+                selection.playerCombo,
+                1
+        );
+
+        addRow(
+                form,
+                "Tipo de cartão *",
+                cardTypeCombo,
                 2
         );
 
         addRow(
                 form,
-                "Faltas de " + game.teamA + " *",
-                foulsAField,
+                "Minuto *",
+                minuteField,
                 3
         );
 
+        showEventFormPage(
+                app,
+                store,
+                game,
+                "Registar Cartão",
+                form,
+                () -> {
+                    TorneioApp.Team team =
+                            selection.selectedTeam();
+
+                    TorneioApp.Player player =
+                            selection.selectedPlayer();
+
+                    TipoEventoJogo cardType =
+                            (TipoEventoJogo)
+                                    cardTypeCombo.getSelectedItem();
+
+                    Integer minute =
+                            parseMinute(
+                                    app,
+                                    minuteField.getText()
+                            );
+
+                    if (
+                            team == null ||
+                                    player == null ||
+                                    cardType == null ||
+                                    minute == null
+                    ) {
+                        if (
+                                team == null ||
+                                        player == null
+                        ) {
+                            app.error(
+                                    "Seleciona uma equipa e um jogador."
+                            );
+                        }
+
+                        return;
+                    }
+
+                    registerEvent(
+                            app,
+                            store,
+                            game,
+                            team,
+                            player,
+                            cardType,
+                            minute
+                    );
+                }
+        );
+    }
+
+    private static void showGeneralEventForm(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game
+    ) {
+        TeamPlayerSelection selection =
+                createTeamPlayerSelection(
+                        app,
+                        store,
+                        game,
+                        true
+                );
+
+        if (selection == null) {
+            return;
+        }
+
+        JComboBox<TipoEventoJogo> eventTypeCombo =
+                new JComboBox<>(
+                        new TipoEventoJogo[]{
+                                TipoEventoJogo.FALTA,
+                                TipoEventoJogo.CANTO,
+                                TipoEventoJogo.REMATE,
+                                TipoEventoJogo.FORA_DE_JOGO
+                        }
+                );
+
+        JTextField minuteField =
+                new JTextField();
+
+        JPanel form =
+                createFormPanel();
+
         addRow(
                 form,
-                "Faltas de " + game.teamB + " *",
-                foulsBField,
-                4
+                "Tipo de acontecimento *",
+                eventTypeCombo,
+                0
         );
 
         addRow(
                 form,
-                "Remates de " + game.teamA + " *",
-                shotsAField,
-                5
+                "Equipa *",
+                selection.teamCombo,
+                1
         );
 
         addRow(
                 form,
-                "Remates de " + game.teamB + " *",
-                shotsBField,
-                6
+                "Jogador",
+                selection.playerCombo,
+                2
         );
 
         addRow(
                 form,
-                "Foras de jogo de " + game.teamA + " *",
-                offsidesAField,
-                7
+                "Minuto *",
+                minuteField,
+                3
+        );
+
+        showEventFormPage(
+                app,
+                store,
+                game,
+                "Registar Evento",
+                form,
+                () -> {
+                    TipoEventoJogo eventType =
+                            (TipoEventoJogo)
+                                    eventTypeCombo.getSelectedItem();
+
+                    TorneioApp.Team team =
+                            selection.selectedTeam();
+
+                    TorneioApp.Player player =
+                            selection.selectedPlayer();
+
+                    Integer minute =
+                            parseMinute(
+                                    app,
+                                    minuteField.getText()
+                            );
+
+                    if (
+                            eventType == null ||
+                                    team == null ||
+                                    minute == null
+                    ) {
+                        if (team == null) {
+                            app.error(
+                                    "Seleciona uma equipa."
+                            );
+                        }
+
+                        return;
+                    }
+
+                    registerEvent(
+                            app,
+                            store,
+                            game,
+                            team,
+                            player,
+                            eventType,
+                            minute
+                    );
+                }
+        );
+    }
+
+    private static void showPossessionForm(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game
+    ) {
+        JSpinner possessionASpinner =
+                new JSpinner(
+                        new SpinnerNumberModel(
+                                game.possessionA,
+                                0,
+                                100,
+                                1
+                        )
+                );
+
+        JLabel possessionBLabel =
+                new JLabel(
+                        (100 - game.possessionA) + "%"
+                );
+
+        possessionASpinner.addChangeListener(e -> {
+            int possessionA =
+                    (Integer)
+                            possessionASpinner.getValue();
+
+            possessionBLabel.setText(
+                    (100 - possessionA) + "%"
+            );
+        });
+
+        JPanel form =
+                createFormPanel();
+
+        addRow(
+                form,
+                game.teamA + " (%)",
+                possessionASpinner,
+                0
         );
 
         addRow(
                 form,
-                "Foras de jogo de " + game.teamB + " *",
-                offsidesBField,
-                8
+                game.teamB + " (%)",
+                possessionBLabel,
+                1
         );
 
-        JPanel buttons = createButtonsPanel();
+        showEventFormPage(
+                app,
+                store,
+                game,
+                "Editar Posse de Bola",
+                form,
+                () -> {
+                    game.possessionA =
+                            (Integer)
+                                    possessionASpinner.getValue();
 
-        JButton cancelButton = createButton("Cancelar");
-        JButton confirmButton = createButton("Confirmar");
+                    app.info(
+                            "Posse de bola atualizada com sucesso."
+                    );
+
+                    showGameDetails(
+                            app,
+                            store,
+                            game
+                    );
+                }
+        );
+    }
+
+    private static void registerEvent(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game,
+            TorneioApp.Team team,
+            TorneioApp.Player player,
+            TipoEventoJogo type,
+            int minute
+    ) {
+        if (
+                !validateGameInProgress(
+                        app,
+                        game
+                )
+        ) {
+            return;
+        }
+
+        EventoJogo event =
+                new EventoJogo(
+                        store.nextId(),
+                        game,
+                        team,
+                        player,
+                        type,
+                        minute
+                );
+
+        store.addGameEvent(event);
+
+        app.info(
+                type +
+                        " registado com sucesso."
+        );
+
+        showGameDetails(
+                app,
+                store,
+                game
+        );
+    }
+
+    private static void showEventFormPage(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game,
+            String title,
+            JPanel form,
+            Runnable confirmAction
+    ) {
+        JPanel buttons = new JPanel(
+                new FlowLayout(
+                        FlowLayout.RIGHT
+                )
+        );
+
+        JButton cancelButton =
+                createButton("Cancelar");
+
+        JButton confirmButton =
+                createButton("Confirmar");
 
         buttons.add(cancelButton);
         buttons.add(confirmButton);
 
         cancelButton.addActionListener(e ->
-                showGameDetails(app, store, game)
+                showGameDetails(
+                        app,
+                        store,
+                        game
+                )
         );
 
         confirmButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) {
-                return;
-            }
-
-            Integer possessionA = parseNonNegative(
-                    app,
-                    possessionAField.getText(),
-                    "A posse de bola é inválida."
-            );
-
-            Integer cornersA = parseNonNegative(
-                    app,
-                    cornersAField.getText(),
-                    "Os cantos da equipa A são inválidos."
-            );
-
-            Integer cornersB = parseNonNegative(
-                    app,
-                    cornersBField.getText(),
-                    "Os cantos da equipa B são inválidos."
-            );
-
-            Integer foulsA = parseNonNegative(
-                    app,
-                    foulsAField.getText(),
-                    "As faltas da equipa A são inválidas."
-            );
-
-            Integer foulsB = parseNonNegative(
-                    app,
-                    foulsBField.getText(),
-                    "As faltas da equipa B são inválidas."
-            );
-
-            Integer shotsA = parseNonNegative(
-                    app,
-                    shotsAField.getText(),
-                    "Os remates da equipa A são inválidos."
-            );
-
-            Integer shotsB = parseNonNegative(
-                    app,
-                    shotsBField.getText(),
-                    "Os remates da equipa B são inválidos."
-            );
-
-            Integer offsidesA = parseNonNegative(
-                    app,
-                    offsidesAField.getText(),
-                    "Os foras de jogo da equipa A são inválidos."
-            );
-
-            Integer offsidesB = parseNonNegative(
-                    app,
-                    offsidesBField.getText(),
-                    "Os foras de jogo da equipa B são inválidos."
-            );
-
             if (
-                    possessionA == null ||
-                            cornersA == null ||
-                            cornersB == null ||
-                            foulsA == null ||
-                            foulsB == null ||
-                            shotsA == null ||
-                            shotsB == null ||
-                            offsidesA == null ||
-                            offsidesB == null
+                    !validateGameInProgress(
+                            app,
+                            game
+                    )
             ) {
                 return;
             }
 
-            if (possessionA > 100) {
-                app.error(
-                        "A posse de bola deve estar entre 0 e 100."
-                );
-                return;
-            }
-
-            game.possessionA = possessionA;
-
-            game.cornersA = cornersA;
-            game.cornersB = cornersB;
-
-            game.foulsA = foulsA;
-            game.foulsB = foulsB;
-
-            game.shotsA = shotsA;
-            game.shotsB = shotsB;
-
-            game.offsidesA = offsidesA;
-            game.offsidesB = offsidesB;
-
-            app.info("Dados do jogo editados com sucesso.");
-
-            showGameDetails(app, store, game);
+            confirmAction.run();
         });
 
-        JPanel panel = new JPanel(new BorderLayout());
-
-        panel.add(
-                new JScrollPane(form),
-                BorderLayout.CENTER
+        JPanel page = new JPanel(
+                new BorderLayout()
         );
 
-        panel.add(buttons, BorderLayout.SOUTH);
+        page.add(
+                form,
+                BorderLayout.NORTH
+        );
 
-        app.setPage("Editar Dados do Jogo", panel);
+        page.add(
+                buttons,
+                BorderLayout.SOUTH
+        );
+
+        app.setPage(
+                title,
+                page
+        );
     }
 
-    private static PlayerSelection createPlayerSelection(
+    private static TeamPlayerSelection
+    createTeamPlayerSelection(
             TorneioApp app,
             Store store,
-            TorneioApp.Game game
+            TorneioApp.Game game,
+            boolean allowNoPlayer
     ) {
         TorneioApp.Team teamA =
-                store.findTeamByName(game.teamA);
+                store.findTeamByName(
+                        game.teamA
+                );
 
         TorneioApp.Team teamB =
-                store.findTeamByName(game.teamB);
+                store.findTeamByName(
+                        game.teamB
+                );
 
-        if (teamA == null || teamB == null) {
+        if (
+                teamA == null ||
+                        teamB == null
+        ) {
             app.error(
-                    "Não foi possível encontrar as equipas associadas a este jogo."
+                    "Não foi possível encontrar as equipas deste jogo."
             );
             return null;
         }
 
         JComboBox<TorneioApp.Team> teamCombo =
-                new JComboBox<>();
-
-        teamCombo.addItem(teamA);
-        teamCombo.addItem(teamB);
+                new JComboBox<>(
+                        new TorneioApp.Team[]{
+                                teamA,
+                                teamB
+                        }
+                );
 
         teamCombo.setRenderer(
-                new DefaultListCellRenderer() {
-                    @Override
-                    public Component getListCellRendererComponent(
-                            JList<?> list,
-                            Object value,
-                            int index,
-                            boolean isSelected,
-                            boolean cellHasFocus
-                    ) {
-                        JLabel label =
-                                (JLabel) super.getListCellRendererComponent(
-                                        list,
-                                        value,
-                                        index,
-                                        isSelected,
-                                        cellHasFocus
-                                );
-
-                        if (value instanceof TorneioApp.Team team) {
-                            label.setText(team.name);
-                        }
-
-                        return label;
-                    }
-                }
+                createTeamRenderer()
         );
 
         JComboBox<TorneioApp.Player> playerCombo =
                 new JComboBox<>();
 
         playerCombo.setRenderer(
-                new DefaultListCellRenderer() {
-                    @Override
-                    public Component getListCellRendererComponent(
-                            JList<?> list,
-                            Object value,
-                            int index,
-                            boolean isSelected,
-                            boolean cellHasFocus
-                    ) {
-                        JLabel label =
-                                (JLabel) super.getListCellRendererComponent(
-                                        list,
-                                        value,
-                                        index,
-                                        isSelected,
-                                        cellHasFocus
-                                );
-
-                        if (value instanceof TorneioApp.Player player) {
-                            label.setText(
-                                    player.number +
-                                            " - " +
-                                            player.name
-                            );
-                        }
-
-                        return label;
-                    }
-                }
+                createPlayerRenderer()
         );
 
-        refreshPlayers(teamCombo, playerCombo);
+        refreshPlayers(
+                teamCombo,
+                playerCombo,
+                allowNoPlayer
+        );
 
         teamCombo.addActionListener(e ->
-                refreshPlayers(teamCombo, playerCombo)
+                refreshPlayers(
+                        teamCombo,
+                        playerCombo,
+                        allowNoPlayer
+                )
         );
 
-        return new PlayerSelection(
+        return new TeamPlayerSelection(
                 teamCombo,
                 playerCombo
         );
@@ -704,9 +1010,14 @@ public class DadosJogoPainelControlador {
 
     private static void refreshPlayers(
             JComboBox<TorneioApp.Team> teamCombo,
-            JComboBox<TorneioApp.Player> playerCombo
+            JComboBox<TorneioApp.Player> playerCombo,
+            boolean allowNoPlayer
     ) {
         playerCombo.removeAllItems();
+
+        if (allowNoPlayer) {
+            playerCombo.addItem(null);
+        }
 
         TorneioApp.Team selectedTeam =
                 (TorneioApp.Team)
@@ -724,44 +1035,188 @@ public class DadosJogoPainelControlador {
         }
     }
 
-    private static boolean validateGameInProgress(
+    private static ListCellRenderer
+            <? super TorneioApp.Team>
+    createTeamRenderer() {
+        return new DefaultListCellRenderer() {
+            @Override
+            public Component
+            getListCellRendererComponent(
+                    JList<?> list,
+                    Object value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus
+            ) {
+                JLabel label =
+                        (JLabel)
+                                super
+                                        .getListCellRendererComponent(
+                                                list,
+                                                value,
+                                                index,
+                                                isSelected,
+                                                cellHasFocus
+                                        );
+
+                if (
+                        value instanceof
+                                TorneioApp.Team
+                ) {
+                    TorneioApp.Team team =
+                            (TorneioApp.Team)
+                                    value;
+
+                    label.setText(team.name);
+                }
+
+                return label;
+            }
+        };
+    }
+
+    private static ListCellRenderer
+            <? super TorneioApp.Player>
+    createPlayerRenderer() {
+        return new DefaultListCellRenderer() {
+            @Override
+            public Component
+            getListCellRendererComponent(
+                    JList<?> list,
+                    Object value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus
+            ) {
+                JLabel label =
+                        (JLabel)
+                                super
+                                        .getListCellRendererComponent(
+                                                list,
+                                                value,
+                                                index,
+                                                isSelected,
+                                                cellHasFocus
+                                        );
+
+                if (value == null) {
+                    label.setText(
+                            "Não indicar jogador"
+                    );
+                } else if (
+                        value instanceof
+                                TorneioApp.Player
+                ) {
+                    TorneioApp.Player player =
+                            (TorneioApp.Player)
+                                    value;
+
+                    label.setText(
+                            player.number +
+                                    " - " +
+                                    player.name
+                    );
+                }
+
+                return label;
+            }
+        };
+    }
+
+    private static Integer parseMinute(
+            TorneioApp app,
+            String value
+    ) {
+        try {
+            int minute =
+                    Integer.parseInt(
+                            value.trim()
+                    );
+
+            if (
+                    minute < 1 ||
+                            minute > 120
+            ) {
+                app.error(
+                        "O minuto deve estar entre 1 e 120."
+                );
+                return null;
+            }
+
+            return minute;
+
+        } catch (
+                NumberFormatException exception
+        ) {
+            app.error(
+                    "O minuto tem de ser um número inteiro."
+            );
+
+            return null;
+        }
+    }
+
+    private static boolean participantsDefined(
+            TorneioApp.Game game
+    ) {
+        return game != null &&
+                game.teamA != null &&
+                game.teamB != null &&
+                !"A determinar".equals(game.teamA) &&
+                !"A determinar".equals(game.teamB);
+    }
+
+    private static boolean isKnockoutGame(
+            TorneioApp.Game game
+    ) {
+        if (game == null) {
+            return false;
+        }
+
+        return "Quartos de Final".equals(game.phase) ||
+                "Semifinais".equals(game.phase) ||
+                "Final".equals(game.phase);
+    }
+
+    private static void voltarAoCalendario(
+            TorneioApp app,
+            Store store,
+            TorneioApp.Game game
+    ) {
+        if (isKnockoutGame(game)) {
+            Calendario.showFaseEliminacao(
+                    app,
+                    store
+            );
+        } else {
+            Calendario.showCalendario(
+                    app,
+                    store
+            );
+        }
+    }
+
+    private static boolean
+    validateGameInProgress(
             TorneioApp app,
             TorneioApp.Game game
     ) {
-        if (game.state != TorneioApp.GameState.EM_CURSO) {
+        if (
+                game.state !=
+                        TorneioApp.GameState.EM_CURSO
+        ) {
             app.error(
-                    "Não é possível inserir ou editar dados enquanto o jogo não está em curso."
+                    "Só é possível alterar dados enquanto o jogo está em curso."
             );
+
             return false;
         }
 
         return true;
     }
 
-    private static Integer parseNonNegative(
-            TorneioApp app,
-            String value,
-            String errorMessage
-    ) {
-        try {
-            int number = Integer.parseInt(
-                    value.trim()
-            );
-
-            if (number < 0) {
-                app.error(errorMessage);
-                return null;
-            }
-
-            return number;
-
-        } catch (NumberFormatException exception) {
-            app.error(errorMessage);
-            return null;
-        }
-    }
-
-    private static JPanel createFormPanel() {
+    private static JPanel
+    createFormPanel() {
         JPanel form = new JPanel(
                 new GridBagLayout()
         );
@@ -776,12 +1231,6 @@ public class DadosJogoPainelControlador {
         );
 
         return form;
-    }
-
-    private static JPanel createButtonsPanel() {
-        return new JPanel(
-                new FlowLayout(FlowLayout.RIGHT)
-        );
     }
 
     private static void addRow(
@@ -812,43 +1261,112 @@ public class DadosJogoPainelControlador {
         constraints.weightx = 1;
 
         component.setPreferredSize(
-                new Dimension(320, 28)
+                new Dimension(
+                        320,
+                        28
+                )
         );
 
-        form.add(component, constraints);
+        form.add(
+                component,
+                constraints
+        );
     }
 
-    private static JLabel emptyLabel(String text) {
+    private static void addStatisticRow(
+            JPanel panel,
+            String name,
+            String valueA,
+            String valueB
+    ) {
+        panel.add(
+                new JLabel(
+                        name,
+                        SwingConstants.CENTER
+                )
+        );
+
+        panel.add(
+                new JLabel(
+                        valueA,
+                        SwingConstants.CENTER
+                )
+        );
+
+        panel.add(
+                new JLabel(
+                        valueB,
+                        SwingConstants.CENTER
+                )
+        );
+    }
+
+    private static JLabel
+    centeredBoldLabel(
+            String text
+    ) {
         JLabel label = new JLabel(
                 text,
                 SwingConstants.CENTER
         );
 
         label.setFont(
-                new Font("Arial", Font.PLAIN, 16)
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        18
+                )
         );
 
         return label;
     }
 
-    private static JButton createButton(String text) {
-        JButton button = new JButton(text);
+    private static JButton createButton(
+            String text
+    ) {
+        JButton button =
+                new JButton(text);
+
         button.setFocusPainted(false);
 
         return button;
     }
 
-    private static class PlayerSelection {
+    private static class
+    TeamPlayerSelection {
 
-        JComboBox<TorneioApp.Team> teamCombo;
-        JComboBox<TorneioApp.Player> playerCombo;
+        private final
+        JComboBox<TorneioApp.Team>
+                teamCombo;
 
-        PlayerSelection(
-                JComboBox<TorneioApp.Team> teamCombo,
-                JComboBox<TorneioApp.Player> playerCombo
+        private final
+        JComboBox<TorneioApp.Player>
+                playerCombo;
+
+        TeamPlayerSelection(
+                JComboBox<TorneioApp.Team>
+                        teamCombo,
+                JComboBox<TorneioApp.Player>
+                        playerCombo
         ) {
-            this.teamCombo = teamCombo;
-            this.playerCombo = playerCombo;
+            this.teamCombo =
+                    teamCombo;
+
+            this.playerCombo =
+                    playerCombo;
+        }
+
+        TorneioApp.Team selectedTeam() {
+            return (TorneioApp.Team)
+                    teamCombo
+                            .getSelectedItem();
+        }
+
+        TorneioApp.Player
+        selectedPlayer() {
+            return (TorneioApp.Player)
+                    playerCombo
+                            .getSelectedItem();
         }
     }
 }
