@@ -8,15 +8,15 @@ public class Estatisticas {
 
         JPanel tabelaPanel = new JPanel(new GridBagLayout());
         tabelaPanel.setBackground(new Color(220, 220, 220));
-        tabelaPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        tabelaPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 80));
 
         GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(2, 4, 2, 4);
+        c.insets = new Insets(3, 8, 3, 8);
         c.fill = GridBagConstraints.HORIZONTAL;
 
         c.gridy = 0;
         addCell(tabelaPanel, c, 0, "", 60, false);
-        addCell(tabelaPanel, c, 1, "Jogador", 430, false);
+        addCell(tabelaPanel, c, 1, "Jogador", 520, false);
         addCell(tabelaPanel, c, 2, "GM", 60, false);
         addCell(tabelaPanel, c, 3, "CA", 60, false);
         addCell(tabelaPanel, c, 4, "CV", 60, false);
@@ -29,7 +29,7 @@ public class Estatisticas {
 
                 c.gridy = linha;
                 addCell(tabelaPanel, c, 0, String.valueOf(numero), 60, false);
-                addCell(tabelaPanel, c, 1, player.name, 430, false);
+                addCell(tabelaPanel, c, 1, player.name, 520, false);
                 addCell(tabelaPanel, c, 2, "0", 60, true);
                 addCell(tabelaPanel, c, 3, "0", 60, true);
                 addCell(tabelaPanel, c, 4, "0", 60, true);
@@ -50,7 +50,7 @@ public class Estatisticas {
                     JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
             );
 
-            scroll.setPreferredSize(new Dimension(720, 420));
+            scroll.setPreferredSize(new Dimension(880, 460));
             scroll.setBorder(null);
             scroll.getVerticalScrollBar().setUnitIncrement(16);
 
