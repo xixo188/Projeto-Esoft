@@ -4,116 +4,125 @@ import java.awt.*;
 
 public class DadosJogoPainelControlador {
 
-    public static void showGameDetails(
-            TorneioApp app,
-            Store store,
-            TorneioApp.Game game
-    ) {
+    public static void showGameDetails(TorneioApp app, Store store, TorneioApp.Game game) {
         JPanel panel = new JPanel(new BorderLayout(12, 12));
 
-        JTextArea informationArea = new JTextArea();
-        informationArea.setEditable(false);
-        informationArea.setFont(
-                new Font("Monospaced", Font.PLAIN, 14)
-        );
+        boolean jogoComEstatisticas =
+                game.state == TorneioApp.GameState.EM_CURSO ||
+                        game.state == TorneioApp.GameState.CONCLUIDO;
 
-        int possessionB = 100 - game.possessionA;
+        int yellowA = jogoComEstatisticas ? game.yellowA : 0;
+        int yellowB = jogoComEstatisticas ? game.yellowB : 0;
+        int redA = jogoComEstatisticas ? game.redA : 0;
+        int redB = jogoComEstatisticas ? game.redB : 0;
+        int goalsA = jogoComEstatisticas ? game.goalsA : 0;
+        int goalsB = jogoComEstatisticas ? game.goalsB : 0;
+        int possessionA = jogoComEstatisticas ? game.possessionA : 0;
+        int possessionB = jogoComEstatisticas ? 100 - game.possessionA : 0;
 
-        informationArea.setText(
-                "Fase: " + game.phase + "\n" +
-                        "Jogo: " + game.teamA + " vs " + game.teamB + "\n" +
-                        "Data: " + game.dateTime + "\n" +
-                        "Estado: " + game.state + "\n" +
-                        "Estádio: " +
-                        (
-                                game.stadium == null
-                                        ? "Não definido"
-                                        : game.stadium.nome
-                        ) + "\n\n" +
+        JPanel dados = new JPanel(new GridBagLayout());
+        dados.setBackground(new Color(220, 220, 220));
+        dados.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        dados.setPreferredSize(new Dimension(800, 430));
 
-                        "Resultado: " +
-                        game.goalsA + " - " + game.goalsB + "\n" +
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(4, 8, 4, 8);
+        c.fill = GridBagConstraints.HORIZONTAL;
 
-                        "Cartões amarelos: " +
-                        game.yellowA + " - " + game.yellowB + "\n" +
+        JLabel equipaA = new JLabel(game.teamA, SwingConstants.CENTER);
+        JLabel equipaB = new JLabel(game.teamB, SwingConstants.CENTER);
 
-                        "Cartões vermelhos: " +
-                        game.redA + " - " + game.redB + "\n" +
+        equipaA.setFont(new Font("Arial", Font.BOLD, 24));
+        equipaB.setFont(new Font("Arial", Font.BOLD, 24));
 
-                        "Posse de bola: " +
-                        game.possessionA + "% - " +
-                        possessionB + "%\n" +
+        JTextField data = campo(game.dateTime, 200);
+        JTextField estado = campo(game.state.toString(), 120);
 
-                        "Cantos: " +
-                        game.cornersA + " - " + game.cornersB + "\n" +
+        JTextField amarelosA = campo(String.valueOf(yellowA), 115);
+        JTextField amarelosB = campo(String.valueOf(yellowB), 115);
+        JTextField vermelhosA = campo(String.valueOf(redA), 115);
+        JTextField vermelhosB = campo(String.valueOf(redB), 115);
+        JTextField posseA = campo(String.valueOf(possessionA), 115);
+        JTextField posseB = campo(String.valueOf(possessionB), 115);
+        JTextField golosA = campo(String.valueOf(goalsA), 115);
+        JTextField golosB = campo(String.valueOf(goalsB), 115);
 
-                        "Faltas: " +
-                        game.foulsA + " - " + game.foulsB + "\n" +
+        c.gridx = 0; c.gridy = 0;
+        dados.add(new JLabel("img", SwingConstants.CENTER), c);
 
-                        "Remates: " +
-                        game.shotsA + " - " + game.shotsB + "\n" +
+        c.gridx = 1;
+        dados.add(new JLabel("Data", SwingConstants.CENTER), c);
 
-                        "Foras de jogo: " +
-                        game.offsidesA + " - " + game.offsidesB
-        );
+        c.gridx = 2;
+        dados.add(new JLabel("Estado", SwingConstants.CENTER), c);
 
-        DefaultTableModel model = new DefaultTableModel(
-                new String[]{
-                        "Equipa",
-                        "Jogador",
-                        "Golos",
-                        "Amarelos",
-                        "Vermelhos"
-                },
-                0
-        ) {
-            @Override
-            public boolean isCellEditable(
-                    int row,
-                    int column
-            ) {
-                return false;
-            }
-        };
+        c.gridx = 3;
+        dados.add(new JLabel("img", SwingConstants.CENTER), c);
 
-        for (
-                EstatisticaJogadorJogo stat :
-                store.findPlayerStatsByGame(game)
-        ) {
-            model.addRow(new Object[]{
-                    stat.team.name,
-                    stat.player.name,
-                    stat.goals,
-                    stat.yellowCards,
-                    stat.redCards
-            });
-        }
+        c.gridx = 0; c.gridy = 1;
+        dados.add(equipaA, c);
 
-        JTable playerStatsTable = new JTable(model);
+        c.gridx = 1;
+        dados.add(data, c);
 
-        JPanel centerPanel = new JPanel(
-                new GridLayout(2, 1, 12, 12)
-        );
+        c.gridx = 2;
+        dados.add(estado, c);
 
-        centerPanel.add(
-                new JScrollPane(informationArea)
-        );
+        c.gridx = 3;
+        dados.add(equipaB, c);
 
-        if (model.getRowCount() == 0) {
-            centerPanel.add(
-                    emptyLabel(
-                            "Ainda não existem golos ou cartões associados a jogadores."
-                    )
-            );
-        } else {
-            centerPanel.add(
-                    new JScrollPane(playerStatsTable)
-            );
-        }
+        c.gridx = 0; c.gridy = 2;
+        dados.add(new JLabel(game.teamA, SwingConstants.CENTER), c);
 
-        JPanel buttons = new JPanel(
-                new FlowLayout(FlowLayout.RIGHT)
-        );
+        c.gridx = 1;
+        dados.add(new JLabel("vs", SwingConstants.CENTER), c);
+
+        c.gridx = 3;
+        dados.add(new JLabel(game.teamB, SwingConstants.CENTER), c);
+
+        c.gridx = 0; c.gridy = 3;
+        dados.add(amarelosA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Cartão Amarelo", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(amarelosB, c);
+
+        c.gridx = 0; c.gridy = 4;
+        dados.add(vermelhosA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Cartão Vermelho", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(vermelhosB, c);
+
+        c.gridx = 0; c.gridy = 5;
+        dados.add(posseA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Posse de bola", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(posseB, c);
+
+        c.gridx = 0; c.gridy = 6;
+        dados.add(golosA, c);
+
+        c.gridx = 1; c.gridwidth = 2;
+        dados.add(new JLabel("Golos", SwingConstants.CENTER), c);
+
+        c.gridx = 3; c.gridwidth = 1;
+        dados.add(golosB, c);
+
+        c.gridx = 0; c.gridy = 7; c.gridwidth = 4;
+        dados.add(new JLabel("Estádio: " + (game.stadium == null ? "" : game.stadium.nome)), c);
+
+        JPanel center = new JPanel(new GridBagLayout());
+        center.add(dados);
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         JButton backButton = createButton("Voltar");
         JButton cardsButton = createButton("Inserir Cartões");
@@ -125,38 +134,40 @@ public class DadosJogoPainelControlador {
         buttons.add(goalsButton);
         buttons.add(editDataButton);
 
-        backButton.addActionListener(e ->
-                Calendario.showCalendario(app, store)
-        );
+        backButton.addActionListener(e -> Calendario.showCalendario(app, store));
 
         cardsButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) {
-                return;
-            }
-
+            if (!validateGameInProgress(app, game)) return;
             showCardsForm(app, store, game);
         });
 
         goalsButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) {
-                return;
-            }
-
+            if (!validateGameInProgress(app, game)) return;
             showGoalsForm(app, store, game);
         });
 
         editDataButton.addActionListener(e -> {
-            if (!validateGameInProgress(app, game)) {
-                return;
-            }
-
+            if (!validateGameInProgress(app, game)) return;
             showGameDataForm(app, store, game);
         });
 
         panel.add(buttons, BorderLayout.NORTH);
-        panel.add(centerPanel, BorderLayout.CENTER);
+        panel.add(center, BorderLayout.CENTER);
 
-        app.setPage("Dados do Jogo", panel);
+        app.setPage("Dados jogo", panel);
+    }
+
+    private static JTextField campo(String valor, int largura) {
+        JTextField field = new JTextField(valor);
+
+        field.setEditable(false);
+        field.setHorizontalAlignment(JTextField.CENTER);
+
+        field.setPreferredSize(new Dimension(largura, 30));
+
+        field.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        return field;
     }
 
     private static void showCardsForm(

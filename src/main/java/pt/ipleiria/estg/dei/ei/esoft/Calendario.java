@@ -135,9 +135,9 @@ public class Calendario {
         lblSemis.setForeground(Color.WHITE);
         colSemis.add(lblSemis);
 
-        colSemis.add(new JLabel()); // Espaçador
+        colSemis.add(new JLabel());
         colSemis.add(criarCartaoJogo(app, store, semis.size() > 0 ? semis.get(0) : null));
-        colSemis.add(new JLabel()); // Espaçador
+        colSemis.add(new JLabel());
         colSemis.add(criarCartaoJogo(app, store, semis.size() > 1 ? semis.get(1) : null));
 
         chavesPanel.add(colQuartos);
@@ -170,16 +170,6 @@ public class Calendario {
         String emblemaA = "⚽";
         String emblemaB = "⚽";
 
-        // Vai buscar o emblema verdadeiro à base de dados se a equipa existir
-        if (g != null && !g.teamA.equals("Por definir")) {
-            TorneioApp.Team tA = store.teams.stream().filter(t -> t.name.equals(g.teamA)).findFirst().orElse(null);
-            if (tA != null && tA.emblem != null && !tA.emblem.isBlank()) emblemaA = tA.emblem;
-        }
-        if (g != null && !g.teamB.equals("Por definir")) {
-            TorneioApp.Team tB = store.teams.stream().filter(t -> t.name.equals(g.teamB)).findFirst().orElse(null);
-            if (tB != null && tB.emblem != null && !tB.emblem.isBlank()) emblemaB = tB.emblem;
-        }
-
         JPanel linha1 = new JPanel(new GridLayout(1, 3));
         linha1.setOpaque(false);
         linha1.add(textoBranco(g != null ? g.dateTime.split(" ")[0] : "Data"));
@@ -189,12 +179,12 @@ public class Calendario {
         JPanel linha2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         linha2.setOpaque(false);
         linha2.add(textoBranco(emblemaA));
-        linha2.add(textoBranco(g != null && !g.teamA.equals("Por definir") ? g.teamA : "A determinar"));
+        linha2.add(textoBranco(g != null ? g.teamA : "A determinar"));
 
         JPanel linha3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         linha3.setOpaque(false);
         linha3.add(textoBranco(emblemaB));
-        linha3.add(textoBranco(g != null && !g.teamB.equals("Por definir") ? g.teamB : "A determinar"));
+        linha3.add(textoBranco(g != null ? g.teamB : "A determinar"));
 
         JPanel linha4 = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         linha4.setOpaque(false);
@@ -207,7 +197,6 @@ public class Calendario {
 
         if (g != null) {
             cartao.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
             cartao.addMouseListener(new java.awt.event.MouseAdapter() {
                 @Override
                 public void mouseClicked(java.awt.event.MouseEvent e) {

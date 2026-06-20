@@ -265,8 +265,15 @@ public class Store {
          * O torneio não é criado automaticamente.
          * O utilizador poderá criá-lo através da interface.
          */
-        this.tournament = null;
-        this.calendarGenerated = false;
+        this.tournament = new TorneioApp.Tournament(
+                "Torneio ESoft 2026",
+                "10/06/2026",
+                "30/06/2026",
+                2
+        );
+
+        this.tournament.state = "em curso";
+        this.calendarGenerated = true;
 
         // =====================================================
         // ESTÁDIOS
@@ -723,11 +730,74 @@ public class Store {
                 )
         );
 
+        TorneioApp.Game q1 = new TorneioApp.Game(
+                nextId(),
+                "Quartos de Final",
+                "Benfica",
+                "Sp. Braga",
+                "10/06/2026 18:00",
+                luz
+        );
+
+        TorneioApp.Game q2 = new TorneioApp.Game(
+                nextId(),
+                "Quartos de Final",
+                "Porto",
+                "Vitória SC",
+                "11/06/2026 20:00",
+                dragao
+        );
+
+        TorneioApp.Game q3 = new TorneioApp.Game(
+                nextId(),
+                "Quartos de Final",
+                "Sporting",
+                "Famalicão",
+                "12/06/2026 18:00",
+                alvalade
+        );
+
+        TorneioApp.Game q4 = new TorneioApp.Game(
+                nextId(),
+                "Quartos de Final",
+                "Boavista",
+                "Gil Vicente",
+                "13/06/2026 20:00",
+                pedreira
+        );
+
+        TorneioApp.Game s1 = new TorneioApp.Game(
+                nextId(),
+                "Semifinais",
+                "A determinar",
+                "A determinar",
+                "20/06/2026 18:00",
+                luz
+        );
+
+        TorneioApp.Game s2 = new TorneioApp.Game(
+                nextId(),
+                "Semifinais",
+                "A determinar",
+                "A determinar",
+                "21/06/2026 20:00",
+                dragao
+        );
+
+        games.add(q1);
+        games.add(q2);
+        games.add(q3);
+        games.add(q4);
+        games.add(s1);
+        games.add(s2);
+
         /*
          * Os jogos e bilhetes continuam vazios.
          * Serão criados através da calendarização.
          */
     }
+
+
 
     private void adicionarJogador(
             TorneioApp.Team team,
