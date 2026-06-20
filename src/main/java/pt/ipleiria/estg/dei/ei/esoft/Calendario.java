@@ -198,19 +198,28 @@ public class Calendario {
         }
 
         if (store.calendarGenerated) {
-            boolean quartosCriados = existeFase(store, "Quartos de Final");
+            boolean quartosApurados =
+                    quartosComParticipantesDefinidos(store);
 
-            JButton apurar = new JButton(quartosCriados ? "Ver Eliminatórias" : "Apurar Eliminatórias");
+            JButton apurar = new JButton(
+                    quartosApurados
+                            ? "Ver Eliminatórias"
+                            : "Apurar Eliminatórias"
+            );
+
             apurar.setBackground(new Color(40, 167, 69));
             apurar.setForeground(Color.WHITE);
 
             apurar.addActionListener(e -> {
-                if (!existeFase(store, "Quartos de Final")) {
-                    boolean generated = apurarFaseEliminacao(app, store);
+                if (!quartosComParticipantesDefinidos(store)) {
+                    boolean generated =
+                            apurarFaseEliminacao(app, store);
+
                     if (!generated) {
                         return;
                     }
                 }
+
                 showFaseEliminacao(app, store);
             });
 
@@ -452,28 +461,50 @@ public class Calendario {
         return "Por agendar";
     }
 
-    private static boolean apurarFaseEliminacao(TorneioApp app, Store store) {
-        if (!todosJogosFaseConcluidos(store, "Fase de Grupos")) {
-            app.error("Só é possível apurar as eliminatórias depois de todos os jogos da fase de grupos estarem concluídos.");
+    private static boolean apurarFaseEliminacao(
+            TorneioApp app,
+            Store store
+    ) {
+        if (
+                !todosJogosFaseConcluidos(
+                        store,
+                        "Fase de Grupos"
+                )
+        ) {
+            app.error(
+                    "Só é possível apurar as eliminatórias depois de todos os jogos da fase de grupos estarem concluídos."
+            );
             return false;
-        }
-
-        if (existeFase(store, "Quartos de Final")) {
-            return true;
         }
 
         if (store.stadiums.isEmpty()) {
-            app.error("É necessário existir pelo menos um estádio para gerar a fase de eliminação.");
+            app.error(
+                    "É necessário existir pelo menos um estádio para gerar a fase de eliminação."
+            );
             return false;
         }
 
-        List<Equipa> groupA = obterClassificacaoGrupo(store, 0);
-        List<Equipa> groupB = obterClassificacaoGrupo(store, 1);
-        List<Equipa> groupC = obterClassificacaoGrupo(store, 2);
-        List<Equipa> groupD = obterClassificacaoGrupo(store, 3);
+        List<Equipa> groupA =
+                obterClassificacaoGrupo(store, 0);
 
-        if (groupA.size() < 2 || groupB.size() < 2 || groupC.size() < 2 || groupD.size() < 2) {
-            app.error("Não foi possível obter os dois primeiros classificados de todos os grupos.");
+        List<Equipa> groupB =
+                obterClassificacaoGrupo(store, 1);
+
+        List<Equipa> groupC =
+                obterClassificacaoGrupo(store, 2);
+
+        List<Equipa> groupD =
+                obterClassificacaoGrupo(store, 3);
+
+        if (
+                groupA.size() < 2 ||
+                groupB.size() < 2 ||
+                groupC.size() < 2 ||
+                groupD.size() < 2
+        ) {
+            app.error(
+                    "Não foi possível obter os dois primeiros classificados de todos os grupos."
+            );
             return false;
         }
 
@@ -489,26 +520,197 @@ public class Calendario {
         Equipa firstD = groupD.get(0);
         Equipa secondD = groupD.get(1);
 
-        LocalDateTime firstQuarterDate = nextDateAfterPhase(store, "Fase de Grupos");
+        List<Jogo> quarters =
+                getGamesByPhase(
+                        store,
+                        "Quartos de Final"
+                );
 
-        createKnockoutGame(store, "Quartos de Final", firstA, secondB, firstQuarterDate, 0);
-        createKnockoutGame(store, "Quartos de Final", firstB, secondA, firstQuarterDate, 1);
-        createKnockoutGame(store, "Quartos de Final", firstC, secondD, firstQuarterDate.plusDays(1), 2);
-        createKnockoutGame(store, "Quartos de Final", firstD, secondC, firstQuarterDate.plusDays(1), 3);
+        /*
+         * O generateCalendar() já pode ter criado os quatro jogos
+         * eliminatórios com os participantes como "A determinar".
+         * Nesse caso, atualizamos esses mesmos objetos em vez de
+         * tentar criar uma segunda fase de eliminação.
+         */
+        if (quarters.size() == 4) {
+            definirParticipantes(
+                    quarters.get(0),
+                    firstA,
+                    secondB
+            );
 
-        int restDays = store.tournament == null ? 2 : Math.max(1, store.tournament.restDays);
+            definirParticipantes(
+                    quarters.get(1),
+                    firstB,
+                    secondA
+            );
 
-        LocalDateTime lastQuarterDate = firstQuarterDate.plusDays(1).withHour(20).withMinute(30);
-        LocalDateTime semifinalDate = lastQuarterDate.plusDays(restDays).withHour(18).withMinute(0);
+            definirParticipantes(
+                    quarters.get(2),
+                    firstC,
+                    secondD
+            );
 
-        createPlaceholderKnockoutGame(store, "Semifinais", semifinalDate, 0);
-        createPlaceholderKnockoutGame(store, "Semifinais", semifinalDate.withHour(20).withMinute(30), 1);
+            definirParticipantes(
+                    quarters.get(3),
+                    firstD,
+                    secondC
+            );
+        } else if (quarters.isEmpty()) {
+            LocalDateTime firstQuarterDate =
+                    nextDateAfterPhase(
+                            store,
+                            "Fase de Grupos"
+                    );
 
-        LocalDateTime finalDate = determineFinalDate(store, semifinalDate, restDays);
-        createPlaceholderKnockoutGame(store, "Final", finalDate, 0);
+            createKnockoutGame(
+                    store,
+                    "Quartos de Final",
+                    firstA,
+                    secondB,
+                    firstQuarterDate,
+                    0
+            );
 
-        app.info("Fase de eliminação criada com sucesso.\nAs datas e os estádios dos quartos de final, semifinais e final já estão definidos.");
+            createKnockoutGame(
+                    store,
+                    "Quartos de Final",
+                    firstB,
+                    secondA,
+                    firstQuarterDate,
+                    1
+            );
+
+            createKnockoutGame(
+                    store,
+                    "Quartos de Final",
+                    firstC,
+                    secondD,
+                    firstQuarterDate.plusDays(1),
+                    2
+            );
+
+            createKnockoutGame(
+                    store,
+                    "Quartos de Final",
+                    firstD,
+                    secondC,
+                    firstQuarterDate.plusDays(1),
+                    3
+            );
+        } else {
+            app.error(
+                    "A fase de eliminação está incompleta. Devem existir exatamente quatro jogos dos quartos de final."
+            );
+            return false;
+        }
+
+        int restDays =
+                store.tournament == null
+                        ? 2
+                        : Math.max(
+                                1,
+                                store.tournament.restDays
+                        );
+
+        LocalDateTime firstQuarterDate =
+                nextDateAfterPhase(
+                        store,
+                        "Fase de Grupos"
+                );
+
+        LocalDateTime lastQuarterDate =
+                firstQuarterDate
+                        .plusDays(1)
+                        .withHour(20)
+                        .withMinute(30);
+
+        LocalDateTime semifinalDate =
+                lastQuarterDate
+                        .plusDays(restDays)
+                        .withHour(18)
+                        .withMinute(0);
+
+        List<Jogo> semifinals =
+                getGamesByPhase(
+                        store,
+                        "Semifinais"
+                );
+
+        if (semifinals.isEmpty()) {
+            createPlaceholderKnockoutGame(
+                    store,
+                    "Semifinais",
+                    semifinalDate,
+                    0
+            );
+
+            createPlaceholderKnockoutGame(
+                    store,
+                    "Semifinais",
+                    semifinalDate
+                            .withHour(20)
+                            .withMinute(30),
+                    1
+            );
+        }
+
+        List<Jogo> finals =
+                getGamesByPhase(
+                        store,
+                        "Final"
+                );
+
+        if (finals.isEmpty()) {
+            LocalDateTime finalDate =
+                    determineFinalDate(
+                            store,
+                            semifinalDate,
+                            restDays
+                    );
+
+            createPlaceholderKnockoutGame(
+                    store,
+                    "Final",
+                    finalDate,
+                    0
+            );
+        }
+
+        app.info(
+                "Equipas apuradas para a fase de eliminação com sucesso."
+        );
+
         return true;
+    }
+
+
+    private static void definirParticipantes(
+            Jogo game,
+            Equipa teamA,
+            Equipa teamB
+    ) {
+        game.teamA = teamA.name;
+        game.teamB = teamB.name;
+        game.state = EstadoJogo.AGENDADO;
+    }
+
+    private static boolean quartosComParticipantesDefinidos(
+            Store store
+    ) {
+        List<Jogo> quarters =
+                getGamesByPhase(
+                        store,
+                        "Quartos de Final"
+                );
+
+        return quarters.size() == 4 &&
+                quarters.stream().allMatch(game ->
+                        game.teamA != null &&
+                        game.teamB != null &&
+                        !"A determinar".equals(game.teamA) &&
+                        !"A determinar".equals(game.teamB)
+                );
     }
 
     public static void atualizarEliminatorias(TorneioApp app, Store store) {
