@@ -1,5 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class Estatisticas {
 
@@ -21,26 +24,46 @@ public class Estatisticas {
         addCell(tabelaPanel, c, 3, "CA", 60, false);
         addCell(tabelaPanel, c, 4, "CV", 60, false);
 
-        int linha = 1;
-        int numero = 1;
+        List<LinhaEstatistica> linhas = new ArrayList<>();
 
         for (TorneioApp.Team team : store.teams) {
             for (TorneioApp.Player player : team.players) {
+                int gm = calcularGolosMarcados(store, player);
+                int ca = calcularCartoesAmarelos(store, player);
+                int cv = calcularCartoesVermelhos(store, player);
 
-                c.gridy = linha;
-                addCell(tabelaPanel, c, 0, String.valueOf(numero), 60, false);
-                addCell(tabelaPanel, c, 1, player.name, 520, false);
-                addCell(tabelaPanel, c, 2, "0", 60, true);
-                addCell(tabelaPanel, c, 3, "0", 60, true);
-                addCell(tabelaPanel, c, 4, "0", 60, true);
-
-                linha++;
-                numero++;
+                linhas.add(new LinhaEstatistica(player.name, gm, ca, cv));
             }
         }
 
-        if (numero == 1) {
-            JLabel empty = new JLabel("Ainda não existem dados estatísticos registados para este torneio.");
+        linhas.sort(
+                Comparator.comparingInt((LinhaEstatistica l) -> l.gm).reversed()
+                        .thenComparing(Comparator.comparingInt((LinhaEstatistica l) -> l.ca).reversed())
+                        .thenComparing(Comparator.comparingInt((LinhaEstatistica l) -> l.cv).reversed())
+                        .thenComparing(l -> l.nome)
+        );
+
+        int linha = 1;
+        int numero = 1;
+
+        for (LinhaEstatistica item : linhas) {
+            c.gridy = linha;
+
+            addCell(tabelaPanel, c, 0, String.valueOf(numero), 60, false);
+            addCell(tabelaPanel, c, 1, item.nome, 520, false);
+            addCell(tabelaPanel, c, 2, item.gm > 0 ? String.valueOf(item.gm) : "", 60, true);
+            addCell(tabelaPanel, c, 3, item.ca > 0 ? String.valueOf(item.ca) : "", 60, true);
+            addCell(tabelaPanel, c, 4, item.cv > 0 ? String.valueOf(item.cv) : "", 60, true);
+
+            linha++;
+            numero++;
+        }
+
+        if (linhas.isEmpty()) {
+            JLabel empty = new JLabel(
+                    "Ainda não existem dados estatísticos registados para este torneio.",
+                    SwingConstants.CENTER
+            );
             empty.setFont(new Font("Arial", Font.PLAIN, 18));
             p.add(empty);
         } else {
@@ -60,7 +83,78 @@ public class Estatisticas {
         app.setPage("Estatísticas gerais", p);
     }
 
-    private static void addCell(JPanel panel, GridBagConstraints c, int x, String text, int width, boolean whiteBox) {
+    private static int calcularGolosMarcados(Store store, TorneioApp.Player player) {
+        int total = 0;
+
+        for (EventoJogo evento : store.gameEvents) {
+            if (evento.player == player && evento.type == TipoEventoJogo.GOLO) {
+                total++;
+            }
+        }
+
+        for (EstatisticaJogadorJogo stat : store.playerGameStats) {
+            if (stat.player == player && !existeEventoParaJogo(store, stat.game)) {
+                total += stat.goals;
+            }
+        }
+
+        return total;
+    }
+
+    private static int calcularCartoesAmarelos(Store store, TorneioApp.Player player) {
+        int total = 0;
+
+        for (EventoJogo evento : store.gameEvents) {
+            if (evento.player == player && evento.type == TipoEventoJogo.CARTAO_AMARELO) {
+                total++;
+            }
+        }
+
+        for (EstatisticaJogadorJogo stat : store.playerGameStats) {
+            if (stat.player == player && !existeEventoParaJogo(store, stat.game)) {
+                total += stat.yellowCards;
+            }
+        }
+
+        return total;
+    }
+
+    private static int calcularCartoesVermelhos(Store store, TorneioApp.Player player) {
+        int total = 0;
+
+        for (EventoJogo evento : store.gameEvents) {
+            if (evento.player == player && evento.type == TipoEventoJogo.CARTAO_VERMELHO) {
+                total++;
+            }
+        }
+
+        for (EstatisticaJogadorJogo stat : store.playerGameStats) {
+            if (stat.player == player && !existeEventoParaJogo(store, stat.game)) {
+                total += stat.redCards;
+            }
+        }
+
+        return total;
+    }
+
+    private static boolean existeEventoParaJogo(Store store, TorneioApp.Game game) {
+        for (EventoJogo evento : store.gameEvents) {
+            if (evento.game == game) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void addCell(
+            JPanel panel,
+            GridBagConstraints c,
+            int x,
+            String text,
+            int width,
+            boolean whiteBox
+    ) {
         c.gridx = x;
 
         JLabel label = new JLabel(text, SwingConstants.CENTER);
@@ -78,5 +172,19 @@ public class Estatisticas {
         }
 
         panel.add(label, c);
+    }
+
+    private static class LinhaEstatistica {
+        String nome;
+        int gm;
+        int ca;
+        int cv;
+
+        LinhaEstatistica(String nome, int gm, int ca, int cv) {
+            this.nome = nome;
+            this.gm = gm;
+            this.ca = ca;
+            this.cv = cv;
+        }
     }
 }
