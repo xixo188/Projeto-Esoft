@@ -163,6 +163,9 @@ public class Calendario {
                             }
                         } else if (g.state == TorneioApp.GameState.EM_CURSO) {
                             app.showGameDetails(g);
+
+                        } else if (g.state == TorneioApp.GameState.CONCLUIDO) {
+                            app.showGameDetails(g);
                         }
                     }
                 }
